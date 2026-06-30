@@ -158,6 +158,48 @@ export type Database = {
         }
         Relationships: []
       }
+      shift_templates: {
+        Row: {
+          break_minutes: number
+          color: string | null
+          created_at: string
+          ends_time: string
+          hourly_rate: number | null
+          id: string
+          name: string
+          sort_order: number
+          starts_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          break_minutes?: number
+          color?: string | null
+          created_at?: string
+          ends_time: string
+          hourly_rate?: number | null
+          id?: string
+          name: string
+          sort_order?: number
+          starts_time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          break_minutes?: number
+          color?: string | null
+          created_at?: string
+          ends_time?: string
+          hourly_rate?: number | null
+          id?: string
+          name?: string
+          sort_order?: number
+          starts_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       shifts: {
         Row: {
           base_amount: number | null
