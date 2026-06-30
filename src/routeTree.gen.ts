@@ -24,6 +24,8 @@ import { Route as AppJobbRouteImport } from './routes/_app/jobb'
 import { Route as AppInstallningarRouteImport } from './routes/_app/installningar'
 import { Route as AppInsikterRouteImport } from './routes/_app/insikter'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppInstallningarIndexRouteImport } from './routes/_app/installningar.index'
+import { Route as AppInstallningarProfilOchReglerRouteImport } from './routes/_app/installningar.profil-och-regler'
 import { Route as AppInstallningarLonArbeteRouteImport } from './routes/_app/installningar.lon-arbete'
 
 const AuthRoute = AuthRouteImport.update({
@@ -100,6 +102,17 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInstallningarIndexRoute = AppInstallningarIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppInstallningarRoute,
+} as any)
+const AppInstallningarProfilOchReglerRoute =
+  AppInstallningarProfilOchReglerRouteImport.update({
+    id: '/profil-och-regler',
+    path: '/profil-och-regler',
+    getParentRoute: () => AppInstallningarRoute,
+  } as any)
 const AppInstallningarLonArbeteRoute =
   AppInstallningarLonArbeteRouteImport.update({
     id: '/lon-arbete',
@@ -123,13 +136,14 @@ export interface FileRoutesByFullPath {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
+  '/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
+  '/installningar/': typeof AppInstallningarIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/insikter': typeof AppInsikterRoute
-  '/installningar': typeof AppInstallningarRouteWithChildren
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
@@ -140,6 +154,8 @@ export interface FileRoutesByTo {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
+  '/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
+  '/installningar': typeof AppInstallningarIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -159,6 +175,8 @@ export interface FileRoutesById {
   '/auth_/forgot-password': typeof AuthForgotPasswordRoute
   '/auth_/reset-password': typeof AuthResetPasswordRoute
   '/_app/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
+  '/_app/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
+  '/_app/installningar/': typeof AppInstallningarIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -178,13 +196,14 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/installningar/lon-arbete'
+    | '/installningar/profil-och-regler'
+    | '/installningar/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/dashboard'
     | '/insikter'
-    | '/installningar'
     | '/jobb'
     | '/kalender'
     | '/pengar'
@@ -195,6 +214,8 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/installningar/lon-arbete'
+    | '/installningar/profil-och-regler'
+    | '/installningar'
   id:
     | '__root__'
     | '/'
@@ -213,6 +234,8 @@ export interface FileRouteTypes {
     | '/auth_/forgot-password'
     | '/auth_/reset-password'
     | '/_app/installningar/lon-arbete'
+    | '/_app/installningar/profil-och-regler'
+    | '/_app/installningar/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -333,6 +356,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/installningar/': {
+      id: '/_app/installningar/'
+      path: '/'
+      fullPath: '/installningar/'
+      preLoaderRoute: typeof AppInstallningarIndexRouteImport
+      parentRoute: typeof AppInstallningarRoute
+    }
+    '/_app/installningar/profil-och-regler': {
+      id: '/_app/installningar/profil-och-regler'
+      path: '/profil-och-regler'
+      fullPath: '/installningar/profil-och-regler'
+      preLoaderRoute: typeof AppInstallningarProfilOchReglerRouteImport
+      parentRoute: typeof AppInstallningarRoute
+    }
     '/_app/installningar/lon-arbete': {
       id: '/_app/installningar/lon-arbete'
       path: '/lon-arbete'
@@ -345,10 +382,14 @@ declare module '@tanstack/react-router' {
 
 interface AppInstallningarRouteChildren {
   AppInstallningarLonArbeteRoute: typeof AppInstallningarLonArbeteRoute
+  AppInstallningarProfilOchReglerRoute: typeof AppInstallningarProfilOchReglerRoute
+  AppInstallningarIndexRoute: typeof AppInstallningarIndexRoute
 }
 
 const AppInstallningarRouteChildren: AppInstallningarRouteChildren = {
   AppInstallningarLonArbeteRoute: AppInstallningarLonArbeteRoute,
+  AppInstallningarProfilOchReglerRoute: AppInstallningarProfilOchReglerRoute,
+  AppInstallningarIndexRoute: AppInstallningarIndexRoute,
 }
 
 const AppInstallningarRouteWithChildren =
@@ -389,13 +430,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
