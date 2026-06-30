@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
-import { ArrowRight, Mail, Lock, Sparkles } from "lucide-react";
+import { ArrowRight, Mail, Lock, Sparkles, AlertCircle } from "lucide-react";
+import { mapAuthError } from "@/lib/auth-errors";
 
 export const Route = createFileRoute("/auth")({
   beforeLoad: async () => {
@@ -21,8 +22,9 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<ReturnType<typeof mapAuthError> | null>(null);
+  const [resending, setResending] = useState(false);
 
-  // Defensive: redirect if session appears
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) router.navigate({ to: "/dashboard" });
@@ -33,50 +35,76 @@ function AuthPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error: err } = await supabase.auth.signUp({
           email, password,
           options: {
             data: { display_name: name || email.split("@")[0] },
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/auth/confirmed`,
           },
         });
-        if (error) throw error;
-        toast.success("Konto skapat! Du är inloggad.");
+        if (err) throw err;
+        if (data.session) {
+          toast.success("Välkommen till My Money Master.");
+          router.navigate({ to: "/dashboard" });
+        } else {
+          router.navigate({ to: "/auth/check-email", search: { email } as any });
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+        if (err) throw err;
         toast.success("Välkommen tillbaka.");
       }
     } catch (err: any) {
-      toast.error(err.message ?? "Något gick fel");
+      setError(mapAuthError(err));
     } finally {
       setLoading(false);
     }
   }
 
+  async function resend() {
+    if (!email) {
+      toast.error("Fyll i din e-post först.");
+      return;
+    }
+    setResending(true);
+    try {
+      const { error: err } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/confirmed` },
+      });
+      if (err) throw err;
+      toast.success("Nytt bekräftelsemail skickat. Kolla din inbox och skräppost.");
+    } catch (err: any) {
+      toast.error(mapAuthError(err).message);
+    } finally {
+      setResending(false);
+    }
+  }
+
   async function google() {
     setLoading(true);
+    setError(null);
     const res = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/dashboard`,
+      redirect_uri: `${window.location.origin}/auth/callback`,
     });
     if (res?.error) {
-      toast.error(res.error.message ?? "Google-inloggning misslyckades");
+      setError(mapAuthError(res.error));
       setLoading(false);
     }
   }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Hero glow */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-40 left-1/2 h-[40rem] w-[60rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,oklch(0.78_0.105_85/0.12),transparent)]" />
         <div className="absolute -bottom-40 right-0 h-[30rem] w-[30rem] rounded-full bg-[radial-gradient(closest-side,oklch(0.55_0.08_165/0.10),transparent)]" />
       </div>
 
       <div className="mx-auto grid min-h-screen max-w-6xl grid-cols-1 items-center gap-12 px-6 py-12 lg:grid-cols-2">
-        {/* Left: brand */}
         <div className="hidden lg:block">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full hairline px-3 py-1 text-xs text-muted-foreground">
             <Sparkles className="h-3 w-3 text-[oklch(0.85_0.12_85)]" /> Operativsystem för ditt ekonomiska liv
@@ -86,7 +114,6 @@ function AuthPage() {
           </h1>
           <p className="mt-6 max-w-md text-lg text-muted-foreground">
             Lön, OB, schema, utgifter och kalender — sammanvävt till ett enda intelligent flöde.
-            Inga API:er. Inga prenumerationer. Bara klarhet.
           </p>
           <ul className="mt-10 space-y-4 text-sm">
             {[
@@ -103,7 +130,6 @@ function AuthPage() {
           </ul>
         </div>
 
-        {/* Right: card */}
         <div className="glass mx-auto w-full max-w-md rounded-3xl p-8">
           <div className="mb-6 text-center">
             <h2 className="display text-2xl">{mode === "signin" ? "Välkommen tillbaka" : "Skapa ditt konto"}</h2>
@@ -113,9 +139,7 @@ function AuthPage() {
           </div>
 
           <button
-            type="button"
-            onClick={google}
-            disabled={loading}
+            type="button" onClick={google} disabled={loading}
             className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-white/[0.04] px-4 py-3 text-sm font-medium transition hover:bg-white/[0.07] disabled:opacity-50"
           >
             <GoogleIcon /> Fortsätt med Google
@@ -125,47 +149,84 @@ function AuthPage() {
             <div className="h-px flex-1 bg-border" /> eller med e-post <div className="h-px flex-1 bg-border" />
           </div>
 
+          {error && (
+            <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                <div className="flex-1">
+                  <div>{error.message}</div>
+                  {error.kind === "email_not_confirmed" && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" onClick={resend} disabled={resending}
+                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50">
+                        {resending ? "Skickar..." : "Skicka bekräftelsemail igen"}
+                      </button>
+                      <button type="button" onClick={() => { setEmail(""); setPassword(""); setError(null); }}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs">
+                        Byt e-postadress
+                      </button>
+                      <button type="button" onClick={google}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs">
+                        Logga in med Google
+                      </button>
+                      <a href="mailto:support@mymoneymaster.app" className="rounded-lg border border-border px-3 py-1.5 text-xs">
+                        Kontakta support
+                      </a>
+                    </div>
+                  )}
+                  {error.kind === "user_exists" && (
+                    <button type="button" onClick={() => setMode("signin")}
+                      className="mt-2 text-xs underline text-foreground">
+                      Gå till login
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={submit} className="space-y-3">
             {mode === "signup" && (
               <Field label="Namn">
-                <input
-                  value={name} onChange={(e) => setName(e.target.value)}
+                <input value={name} onChange={(e) => setName(e.target.value)}
                   className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
-                  placeholder="Vad får vi kalla dig?"
-                />
+                  placeholder="Vad får vi kalla dig?" />
               </Field>
             )}
             <Field label="E-post" icon={<Mail className="h-4 w-4 text-muted-foreground" />}>
-              <input
-                type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
-                placeholder="du@exempel.se"
-              />
+                placeholder="du@exempel.se" />
             </Field>
             <Field label="Lösenord" icon={<Lock className="h-4 w-4 text-muted-foreground" />}>
-              <input
-                type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
+              <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
-                placeholder="Minst 6 tecken"
-              />
+                placeholder="Minst 6 tecken" />
             </Field>
 
-            <button
-              type="submit" disabled={loading}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[oklch(0.88_0.1_85)] to-[oklch(0.7_0.12_75)] px-4 py-3 text-sm font-semibold text-background shadow-[0_10px_30px_-10px_oklch(0.78_0.105_85/0.5)] transition hover:opacity-95 disabled:opacity-50"
-            >
+            {mode === "signin" && (
+              <div className="text-right">
+                <Link to="/auth/forgot-password" className="text-xs text-muted-foreground hover:text-foreground">
+                  Glömt lösenord?
+                </Link>
+              </div>
+            )}
+
+            <button type="submit" disabled={loading}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[oklch(0.88_0.1_85)] to-[oklch(0.7_0.12_75)] px-4 py-3 text-sm font-semibold text-background shadow-[0_10px_30px_-10px_oklch(0.78_0.105_85/0.5)] transition hover:opacity-95 disabled:opacity-50">
               {loading ? "..." : mode === "signin" ? "Logga in" : "Skapa konto"} <ArrowRight className="h-4 w-4" />
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {mode === "signin" ? "Ny här? " : "Har du redan ett konto? "}
-            <button onClick={() => setMode(mode === "signin" ? "signup" : "signin")} className="text-[oklch(0.85_0.12_85)] hover:underline">
+            <button onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setError(null); }}
+              className="text-[oklch(0.85_0.12_85)] hover:underline">
               {mode === "signin" ? "Skapa konto" : "Logga in"}
             </button>
           </p>
           <p className="mt-3 text-center text-[11px] text-muted-foreground/70">
-            Din data lagras krypterat. Endast du har åtkomst (RLS aktivt).
+            Din data lagras krypterat. Endast du har åtkomst.
           </p>
         </div>
       </div>
