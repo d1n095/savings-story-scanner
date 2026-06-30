@@ -1,89 +1,104 @@
-# Planning Engine — Vecka / Månad / Halvår / År
 
-Bygger ovanpå befintliga Calendar Engine + Salary Engine. Allt regelstyrt, inga AI-kostnader.
+# Kalender & Planning Engine — Refaktorering
 
-## 1. Databas (migration)
+Målet: kalendern blir appens nav. Planning Engine planerar bara — inga löneinställningar. Allt modulärt så framtida engines (Health, Travel, Documents…) kan skriva in i samma kalender utan refaktor.
 
-Nya tabeller (alla med RLS scoped till `auth.uid()`, GRANT till `authenticated` + `service_role`):
+## 1. Arkitektur — en kanal för allt
 
-- **`absences`** — semester/sjuk/VAB/tjänstledigt. Fält: `user_id`, `kind` (enum: `vacation|sick|vab|leave|other`), `starts_on`, `ends_on`, `note`, `paid` (bool), `status` (`planned|approved|taken`).
-- **`weekly_patterns`** — återanvändbara veckomönster. Fält: `user_id`, `name`, `days_json` (jsonb: `[{weekday, from, to, break_minutes, template_id?}]`).
-- **`rotations`** — roterande scheman (2-skift, 3-skift, dag/kväll/natt). Fält: `user_id`, `name`, `weeks_json` (jsonb: array av weekly_patterns per rotationsvecka), `cycle_weeks`.
-- **`vacation_balance`** — semesterkonto. Fält: `user_id`, `year`, `total_days`, `used_days`, `saved_days`.
-- **(förberedande för Business)** `teams`, `team_members` — skapas men oanvända i UI nu, redo för chef-vyn senare.
+Allt som händer en viss dag går in i `timeline_events` (tabellen finns redan). Det blir kalenderns enda källa. Övriga tabeller (`shifts`, `expenses`, `absences`, `reminders`, namnsdagar, röda dagar) projiceras in via en gemensam adapter.
 
-## 2. Planning Engine-modul (`src/modules/planning/`)
+```text
+shifts ─┐
+expenses ┤
+absences ┤──▶ calendarSource(date) ──▶ DayEvents ──▶ UI
+reminders┤
+holidays ┤      (deterministisk merge, ingen AI-kostnad)
+namedays ┘
+```
 
-- `views.ts` — aggregering: hours/brutto/netto/OB/röda dagar/semester per dag/vecka/månad/kvartal/halvår/år. Använder befintlig `calculateShift` + `holidaysForYear`.
-- `tax.ts` — enkel netto-uppskattning (svensk schablon, justerbar i inställningar; default 30%).
-- `vacation.ts` — semesteranalys: räkna semesterdagar (vardagar), totalt lediga (inkl. helger/röda dagar), påverkade pass, förlorad OB, "stretch"-förslag (lägg till en dag → X extra lediga).
-- `rotations.ts` — expandera rotation till konkreta veckor över valt intervall.
-- `conflicts.ts` (utöka befintlig) — semesterkrock med pass, dubbelbokning av frånvaro, vilotid <11h mellan pass, >40h/vecka, >50h/vecka.
+Ny modul: `src/modules/calendar/source.ts`
+- `getEventsForRange(from, to)` — slår ihop alla källor till färgkodade events.
+- `getDaySummary(date)` — timmar, brutto, netto, OB, utgifter, inkomster, semester, anteckningar.
+- Indikatorfärger: 🔵 pass, 🟢 lön/inkomst, 🟡 påminnelse, 🔴 räkning/utgift, 🟣 semester, ⚪ insikt, ⭐ namnsdag, 🟥 röd dag.
 
-## 3. UI — `/jobb` blir Planning Hub
+Framtida moduler registrerar sig genom att skriva till `timeline_events` med `kind`-fält — inga UI-ändringar krävs.
 
-Behåller befintlig Shift Engine men lägger till **vy-växlare** högst upp: Dag · Vecka · Månad · Kvartal · Halvår · År.
+## 2. Routes — separera kalender, planering, inställningar
 
-- **Vecko-vy** (default): 7 rader (mån–sön), klicka in tider direkt eller välj mall-chip. "Spara vecka" → batch-insert. Live-summa: timmar, brutto, netto, OB, pass, lediga, varningar.
-- **Månadsvy**: kalendergrid med pass-pillar per dag, röda dagar markerade, semester-overlay. Knappar: "Kopiera förra månaden", "Använd mönster", "Mån–fre 08–16 hela månaden", "Varannan helg".
-- **Kvartal/Halvår**: 3/6 mini-månader sida vid sida med summa-rad per månad.
-- **År-vy**: 12 månadskort. Varje kort: timmar, brutto, netto, OB, semesterdagar, röda dagar. Klick → drill-down.
-- **Drill-down**: År → Månad → Vecka → Dag → Passdetalj (varje nivå är en route-state, inte ny route — håll det enkelt).
+| Route | Roll |
+|---|---|
+| `/kalender` | **Nytt nav**. Månadsvy default, dagspanel, "Idag"-knapp, auto-scroll till idag, klick→DayPanel. |
+| `/planering` | Endast planering. View-switch: Dag · Vecka · Månad · Kvartal · Halvår · År. Zoom-flöde År→Halvår→Månad→Vecka→Dag→Pass. Läser löneregler från profil — sätter dem inte. |
+| `/installningar/lon-arbete` | **Ny**. All permanent löne-/arbetskonfig (se §4). |
+| `/jobb` | Behålls som snabbinmatning av pass (Shift Engine). |
 
-## 4. Semesterpanel (`/jobb` flik "Semester")
+Sidomeny: lägg till "Kalender" överst och "Inställningar" längst ner.
 
-- Markera datumintervall i kalender → visa:
-  - semesterdagar förbrukade (vardagar)
-  - totalt lediga (med helger/röda)
-  - påverkade pass (lista)
-  - förlorad OB (kr)
-  - "stretch-tips": "Lägg till fredag → 4 extra lediga dagar"
-- Spara → skriv till `absences` + skapa `timeline_events`.
-- Semesterkonto-widget (år, kvar, använt).
+## 3. Kalender-UI (`/kalender`)
 
-## 5. Rotationer & mönster (flik "Mönster")
+**Månadsgrid** (default):
+- Dagens datum: guldring, mörkare bakgrund, "Idag"-pill, mjuk glow.
+- Varje cell: datumnummer + max 4 färgprickar (indikatorer), ingen text.
+- Röda dagar och namnsdagar redan inkodade lokalt.
+- Knappar: ‹ › Idag · vy-switch (Månad/Vecka/Dag).
 
-- Skapa weekly_pattern visuellt (7 rader).
-- Skapa rotation (N veckor av patterns).
-- "Applicera på period" → välj startdatum + slutdatum → expand → conflict check → bulk-insert.
-- Snabb-presets: 2-skift (dag/kväll), 3-skift (dag/kväll/natt), Nattvecka, Varannan helg.
+**DayPanel** (Sheet från höger på desktop, full-screen drawer på mobil):
+- Header: datum · veckodag · namnsdag · röd dag-badge · väder-placeholder.
+- Sektioner: Arbete (pass, brutto, netto, OB) · Ekonomi (utgifter, inkomster) · Frånvaro/Semester · Påminnelser · Anteckningar · AI-insikt (deterministisk).
+- Snabbknappar: + Pass · + Utgift · + Inkomst · + Påminnelse · + Semester · + Anteckning. Var och en öppnar en liten dialog som skriver till rätt tabell + `timeline_events`.
 
-## 6. Varningar (utbyggd `conflicts.ts`)
+**Vecka/Dag-vy**: kompakta varianter av samma DayPanel-data.
 
-Visa som chip-lista i varje vy:
-- >40h/vecka (gult), >50h (rött)
-- <11h vila mellan pass
-- semester över befintliga pass
-- dubbelbokad frånvaro
-- saknad rast på 6h+
-- ovanligt låg/hög OB (jmf användarens snitt)
+## 4. Inställningar → Lön & Arbete (`/installningar/lon-arbete`)
 
-## 7. Inställningar (`/installningar`)
+Migration utökar `profiles` med fält som saknas; resten lagras i ny `work_profiles` (förbereder flera arbetsgivare):
 
-Lägg till sektion "Lön & skatt":
-- Skattesats (slider 0–60%, default 30%)
-- Semesterdagar/år (default 25)
-- Min vila mellan pass (default 11h)
-- Max timmar/vecka varning (default 40)
+```text
+work_profiles
+  id, user_id, name (t.ex. "Securitas"), is_default
+  employer, workplace, occupation, collective_agreement
+  hourly_rate, monthly_salary, tax_rate
+  ob_rules (jsonb: kvällar, helg, natt, röd dag, %-eller-kr)
+  overtime_rules (jsonb)
+  vacation_days_per_year, vab_rate, sick_pay_rate
+  per_diem, mileage_rate, pension_pct, bonus_rules, commission_rules
+```
 
-## 8. Design
+`shifts` får `work_profile_id` (nullable, default = is_default).
+Planning Engine och Salary Engine läser endast härifrån.
 
-- Vy-växlare = segmented control (Champagne gold accent på aktiv).
-- Månadsgrid: glas-effekt, röda dagar i mjuk röd-orange, semester i champagne, pass i pearl.
-- Sammanfattningskort: stora siffror, små labels, progress-bars för månads-mål.
-- Inga 500 knappar — primär CTA + 2–3 mall-chips per vy.
+UI: en accordion per sektion (Grund · OB · Övertid · Frånvaro · Ersättningar · Pension/Bonus). Spara per sektion.
 
-## 9. Vad jag INTE bygger nu (markeras "kommer snart")
+## 5. Planning Engine — rensad
 
-- Drag/drop pass mellan dagar (mycket UI-arbete, lägger till i version 2).
-- Team-vy/godkännandeflöde (tabeller skapas, UI senare).
-- Importera schema från Medvind PDF (separat senare).
+Ta bort skatt/OB-inputs från `/planering`. Behåll och förbättra:
+- View-switch Dag/Vecka/Månad/Kvartal/Halvår/År.
+- Sammanfattningsremsa per nivå (enligt spec: dag/vecka/månad/år).
+- Snabbplanering vecka: 7 rader, mallar, spara.
+- Mönster (2-skift, 3-skift, varannan helg, mån–fre) — befintlig logik.
+- Zoom-drilldown: klick på år→månad→vecka→dag→pass-redigering öppnar DayPanel.
+- Varningar: dubbelbokning, för lite vila, saknad rast, semesterkrock, övertid (befintlig `conflicts.ts`, utökas med vila <11h).
 
-## Teknisk översikt (för dig som vill veta)
+## 6. Modularitet för framtida engines
 
-- Allt aggregat beräknas client-side från en enda `shifts`-query för perioden — inga nya RPC:er behövs.
-- React Query keys per period (`["planning", userId, "month", "2026-07"]`) för snabb drill-down utan refetch.
-- Semester-overlay = `absences`-query filtrerad på samma intervall.
-- Rotationsexpand sker i minnet innan batch-insert.
+Konvention dokumenteras i `src/modules/calendar/README.md`:
+- Skriv till `timeline_events` med `kind` (`shift|expense|income|reminder|absence|travel|health|doc|insight|...`), `color`, `icon`, `title`, `subtitle`, `amount?`, `ref_table?`, `ref_id?`.
+- Kalendern plockar upp dem automatiskt — ingen UI-ändring krävs.
 
-Säg klart så kör jag migration + kod.
+## 7. Leverans (en runda)
+
+1. Migration: `work_profiles` + `shifts.work_profile_id` + grants/RLS.
+2. `src/modules/calendar/source.ts` + adapter för befintliga tabeller.
+3. Ny route `/kalender` med MonthGrid + DayPanel + quick-add-dialoger.
+4. Ny route `/installningar/lon-arbete` (flytta fält från profil/planering).
+5. Refaktorera `/planering`: ta bort löneinputs, behåll planering + zoom + varningar; klick på dag öppnar DayPanel.
+6. Sidomeny + redirect: gammal startpunkt → `/kalender`.
+7. README för calendar-modulen.
+
+Inga betalda AI-anrop. All logik deterministisk.
+
+## Frågor innan jag bygger
+
+1. **Startsida efter login** — ska `/kalender` bli ny default istället för `/dashboard`?
+2. **Arbetsprofiler nu eller senare** — bygger jag in `work_profiles` direkt (rekommenderas, undviker migration nr 2), eller håller jag det till en enda profil i denna runda?
+3. **DayPanel quick-add** — vill du ha alla 6 snabbknappar live direkt (Pass, Utgift, Inkomst, Påminnelse, Semester, Anteckning), eller räcker Pass + Utgift + Påminnelse i runda 1?
