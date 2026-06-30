@@ -281,6 +281,7 @@ function ShiftEngine({
       if (error) throw error;
 
       const tl = (inserted ?? []).map((s: any, i: number) => ({
+        kind: "shift" as const,
         user_id: user.id, kind: "shift", title: s.title || "Arbetspass",
         subtitle: `${rows[i].calc.hours.toFixed(1)}h · ${sek(Number(s.total_amount))}`,
         occurs_at: s.starts_at, ends_at: s.ends_at,
