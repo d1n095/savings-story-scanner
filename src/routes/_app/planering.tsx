@@ -57,12 +57,13 @@ function PlaneringPage() {
         supabase.from("work_profiles").select("*").order("is_default", { ascending: false }),
       ]);
       const def = wps?.find((w: any) => w.is_default) ?? wps?.[0];
-      // Föredra default arbetsprofil, annars fallback till profile-värden
       return {
         ...p,
         hourly_rate: def?.hourly_rate ?? p?.hourly_rate ?? 0,
         tax_rate: def?.tax_rate ?? p?.tax_rate ?? 30,
         ob_rules: def?.ob_rules ?? p?.ob_rules,
+        break_rules: normalizeBreakRules(def?.break_rules),
+        work_profile_id: def?.id,
         work_profile_name: def?.name,
       };
     },
