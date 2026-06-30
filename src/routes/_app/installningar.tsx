@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_OB_RULES, type OBRule } from "@/modules/salary/ob";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, Save, ShieldCheck, Briefcase, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_app/installningar")({ component: SettingsPage });
 
