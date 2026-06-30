@@ -24,6 +24,7 @@ import { Route as AppJobbRouteImport } from './routes/_app/jobb'
 import { Route as AppInstallningarRouteImport } from './routes/_app/installningar'
 import { Route as AppInsikterRouteImport } from './routes/_app/insikter'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppInstallningarLonArbeteRouteImport } from './routes/_app/installningar.lon-arbete'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -99,13 +100,19 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInstallningarLonArbeteRoute =
+  AppInstallningarLonArbeteRouteImport.update({
+    id: '/lon-arbete',
+    path: '/lon-arbete',
+    getParentRoute: () => AppInstallningarRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/insikter': typeof AppInsikterRoute
-  '/installningar': typeof AppInstallningarRoute
+  '/installningar': typeof AppInstallningarRouteWithChildren
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
@@ -115,13 +122,14 @@ export interface FileRoutesByFullPath {
   '/auth/confirmed': typeof AuthConfirmedRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/insikter': typeof AppInsikterRoute
-  '/installningar': typeof AppInstallningarRoute
+  '/installningar': typeof AppInstallningarRouteWithChildren
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
@@ -131,6 +139,7 @@ export interface FileRoutesByTo {
   '/auth/confirmed': typeof AuthConfirmedRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -139,7 +148,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/insikter': typeof AppInsikterRoute
-  '/_app/installningar': typeof AppInstallningarRoute
+  '/_app/installningar': typeof AppInstallningarRouteWithChildren
   '/_app/jobb': typeof AppJobbRoute
   '/_app/kalender': typeof AppKalenderRoute
   '/_app/pengar': typeof AppPengarRoute
@@ -149,6 +158,7 @@ export interface FileRoutesById {
   '/auth_/confirmed': typeof AuthConfirmedRoute
   '/auth_/forgot-password': typeof AuthForgotPasswordRoute
   '/auth_/reset-password': typeof AuthResetPasswordRoute
+  '/_app/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/auth/confirmed'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/installningar/lon-arbete'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/auth/confirmed'
     | '/auth/forgot-password'
     | '/auth/reset-password'
+    | '/installningar/lon-arbete'
   id:
     | '__root__'
     | '/'
@@ -200,6 +212,7 @@ export interface FileRouteTypes {
     | '/auth_/confirmed'
     | '/auth_/forgot-password'
     | '/auth_/reset-password'
+    | '/_app/installningar/lon-arbete'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -320,13 +333,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/installningar/lon-arbete': {
+      id: '/_app/installningar/lon-arbete'
+      path: '/lon-arbete'
+      fullPath: '/installningar/lon-arbete'
+      preLoaderRoute: typeof AppInstallningarLonArbeteRouteImport
+      parentRoute: typeof AppInstallningarRoute
+    }
   }
 }
+
+interface AppInstallningarRouteChildren {
+  AppInstallningarLonArbeteRoute: typeof AppInstallningarLonArbeteRoute
+}
+
+const AppInstallningarRouteChildren: AppInstallningarRouteChildren = {
+  AppInstallningarLonArbeteRoute: AppInstallningarLonArbeteRoute,
+}
+
+const AppInstallningarRouteWithChildren =
+  AppInstallningarRoute._addFileChildren(AppInstallningarRouteChildren)
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppInsikterRoute: typeof AppInsikterRoute
-  AppInstallningarRoute: typeof AppInstallningarRoute
+  AppInstallningarRoute: typeof AppInstallningarRouteWithChildren
   AppJobbRoute: typeof AppJobbRoute
   AppKalenderRoute: typeof AppKalenderRoute
   AppPengarRoute: typeof AppPengarRoute
@@ -336,7 +367,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppInsikterRoute: AppInsikterRoute,
-  AppInstallningarRoute: AppInstallningarRoute,
+  AppInstallningarRoute: AppInstallningarRouteWithChildren,
   AppJobbRoute: AppJobbRoute,
   AppKalenderRoute: AppKalenderRoute,
   AppPengarRoute: AppPengarRoute,
