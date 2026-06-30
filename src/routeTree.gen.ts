@@ -23,6 +23,7 @@ import { Route as AppKalenderRouteImport } from './routes/_app/kalender'
 import { Route as AppJobbRouteImport } from './routes/_app/jobb'
 import { Route as AppInstallningarRouteImport } from './routes/_app/installningar'
 import { Route as AppInsikterRouteImport } from './routes/_app/insikter'
+import { Route as AppIdagRouteImport } from './routes/_app/idag'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppInstallningarIndexRouteImport } from './routes/_app/installningar.index'
 import { Route as AppInstallningarProfilOchReglerRouteImport } from './routes/_app/installningar.profil-och-regler'
@@ -97,6 +98,11 @@ const AppInsikterRoute = AppInsikterRouteImport.update({
   path: '/insikter',
   getParentRoute: () => AppRoute,
 } as any)
+const AppIdagRoute = AppIdagRouteImport.update({
+  id: '/idag',
+  path: '/idag',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
+  '/idag': typeof AppIdagRoute
   '/insikter': typeof AppInsikterRoute
   '/installningar': typeof AppInstallningarRouteWithChildren
   '/jobb': typeof AppJobbRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
+  '/idag': typeof AppIdagRoute
   '/insikter': typeof AppInsikterRoute
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/idag': typeof AppIdagRoute
   '/_app/insikter': typeof AppInsikterRoute
   '/_app/installningar': typeof AppInstallningarRouteWithChildren
   '/_app/jobb': typeof AppJobbRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/idag'
     | '/insikter'
     | '/installningar'
     | '/jobb'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/idag'
     | '/insikter'
     | '/jobb'
     | '/kalender'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/auth'
     | '/_app/dashboard'
+    | '/_app/idag'
     | '/_app/insikter'
     | '/_app/installningar'
     | '/_app/jobb'
@@ -349,6 +361,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInsikterRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/idag': {
+      id: '/_app/idag'
+      path: '/idag'
+      fullPath: '/idag'
+      preLoaderRoute: typeof AppIdagRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -397,6 +416,7 @@ const AppInstallningarRouteWithChildren =
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppIdagRoute: typeof AppIdagRoute
   AppInsikterRoute: typeof AppInsikterRoute
   AppInstallningarRoute: typeof AppInstallningarRouteWithChildren
   AppJobbRoute: typeof AppJobbRoute
@@ -407,6 +427,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppIdagRoute: AppIdagRoute,
   AppInsikterRoute: AppInsikterRoute,
   AppInstallningarRoute: AppInstallningarRouteWithChildren,
   AppJobbRoute: AppJobbRoute,
