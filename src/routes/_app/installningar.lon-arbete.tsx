@@ -293,3 +293,76 @@ function F({ label, children }: { label: string; children: React.ReactNode }) {
   return <label className="block"><span className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>{children}</label>;
 }
 function inp() { return "w-full rounded-lg border border-border bg-input/40 px-3 py-2 text-sm outline-none focus:border-[oklch(0.85_0.12_85/0.5)]"; }
+
+function BreakRulesSection({ rules, onChange }: { rules: BreakRules; onChange: (r: BreakRules) => void }) {
+  const setMode = (mode: BreakRules["mode"]) => {
+    if (mode === "auto" && rules.auto.length === 0) {
+      onChange({ ...rules, mode, auto: DEFAULT_BREAK_RULES.auto });
+    } else {
+      onChange({ ...rules, mode });
+    }
+  };
+  const addRow = () => onChange({ ...rules, auto: [...rules.auto, { after_hours: 6, minutes: 30 }] });
+  const updRow = (i: number, patch: Partial<{ after_hours: number; minutes: number }>) =>
+    onChange({ ...rules, auto: rules.auto.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
+  const delRow = (i: number) => onChange({ ...rules, auto: rules.auto.filter((_, j) => j !== i) });
+
+  const modes: Array<{ id: BreakRules["mode"]; label: string; desc: string }> = [
+    { id: "off", label: "Av", desc: "Ingen rast räknas av automatiskt" },
+    { id: "manual", label: "Manuell", desc: "Du anger rast på varje pass" },
+    { id: "auto", label: "Automatisk", desc: "Räkna av efter dina trösklar" },
+  ];
+
+  return (
+    <Section title="Rastregler" extra={<Coffee className="h-4 w-4 text-[oklch(0.85_0.12_85)]" />}>
+      <div className="mb-3 grid gap-2 sm:grid-cols-3">
+        {modes.map(m => (
+          <button key={m.id} type="button" onClick={() => setMode(m.id)}
+            className={cn(
+              "rounded-2xl border p-3 text-left transition",
+              rules.mode === m.id
+                ? "border-[oklch(0.85_0.12_85/0.5)] bg-[oklch(0.85_0.12_85/0.08)]"
+                : "border-border hover:border-[oklch(0.85_0.12_85/0.3)]",
+            )}>
+            <div className="text-sm font-medium">{m.label}</div>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">{m.desc}</div>
+          </button>
+        ))}
+      </div>
+
+      {rules.mode === "auto" && (
+        <div className="space-y-2">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Trösklar (gäller den högsta som passet uppfyller)</div>
+          {rules.auto.length === 0 && <p className="text-sm text-muted-foreground">Inga trösklar. Lägg till en nedan.</p>}
+          {rules.auto.map((r, i) => (
+            <div key={i} className="grid grid-cols-12 items-end gap-2 rounded-xl border border-border bg-white/[0.02] p-3">
+              <div className="col-span-5 sm:col-span-5"><F label="Efter (timmar)">
+                <NumericField value={r.after_hours} onChange={(v) => updRow(i, { after_hours: v ?? 0 })} min={0} max={24} step={0.5} showQuick={false} suffix="h" />
+              </F></div>
+              <div className="col-span-5 sm:col-span-5"><F label="Rast">
+                <NumericField value={r.minutes} onChange={(v) => updRow(i, { minutes: v ?? 0 })} min={0} max={240} step={5} quickSteps={[5, 15, 30]} suffix="min" />
+              </F></div>
+              <div className="col-span-2 flex justify-end">
+                <button type="button" onClick={() => delRow(i)} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-[oklch(0.65_0.12_28/0.1)] hover:text-[oklch(0.7_0.12_28)]">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+          <button type="button" onClick={addRow}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs hover:bg-white/[0.05]">
+            <Plus className="h-3 w-3" /> Lägg till tröskel
+          </button>
+        </div>
+      )}
+
+      {rules.mode === "manual" && (
+        <div className="rounded-xl border border-border bg-white/[0.02] p-3">
+          <F label="Minsta tillåtna rast (kr inget krav = 0)">
+            <NumericField value={rules.min_break_minutes} onChange={(v) => onChange({ ...rules, min_break_minutes: v ?? 0 })} min={0} max={240} step={5} quickSteps={[5, 15, 30]} suffix="min" />
+          </F>
+        </div>
+      )}
+    </Section>
+  );
+}
