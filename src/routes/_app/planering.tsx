@@ -146,6 +146,7 @@ function PlaneringPage() {
 
       {mode === "week" && (
         <WeekFiller
+          key={isoDate(range.start)}
           start={range.start}
           existing={shifts.data ?? []}
           profile={profile.data}
