@@ -76,7 +76,9 @@ function SettingsPage() {
         </div>
         <ChevronRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-[oklch(0.85_0.12_85)]" />
       </Link>
-        <h2 className="display mb-4 text-xl">Personligt</h2>
+
+      <section className="glass rounded-3xl p-6">
+        <h2 className="display mb-4 text-xl">Personligt (standardvärden)</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <F label="Namn"><input value={name} onChange={e => setName(e.target.value)} className="inp" /></F>
           <F label="Timlön (kr)"><input type="number" min={0} value={rate} onChange={e => setRate(+e.target.value)} className="inp" /></F>
