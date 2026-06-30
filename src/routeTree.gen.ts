@@ -12,6 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth_.reset-password'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth_.forgot-password'
+import { Route as AuthConfirmedRouteImport } from './routes/auth_.confirmed'
+import { Route as AuthCheckEmailRouteImport } from './routes/auth_.check-email'
+import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AppPengarRouteImport } from './routes/_app/pengar'
 import { Route as AppKalenderRouteImport } from './routes/_app/kalender'
 import { Route as AppJobbRouteImport } from './routes/_app/jobb'
@@ -31,6 +36,31 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/auth_/reset-password',
+  path: '/auth/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/auth_/forgot-password',
+  path: '/auth/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmedRoute = AuthConfirmedRouteImport.update({
+  id: '/auth_/confirmed',
+  path: '/auth/confirmed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCheckEmailRoute = AuthCheckEmailRouteImport.update({
+  id: '/auth_/check-email',
+  path: '/auth/check-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth_/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppPengarRoute = AppPengarRouteImport.update({
@@ -73,6 +103,11 @@ export interface FileRoutesByFullPath {
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/check-email': typeof AuthCheckEmailRoute
+  '/auth/confirmed': typeof AuthConfirmedRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,6 +118,11 @@ export interface FileRoutesByTo {
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/check-email': typeof AuthCheckEmailRoute
+  '/auth/confirmed': typeof AuthConfirmedRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +135,11 @@ export interface FileRoutesById {
   '/_app/jobb': typeof AppJobbRoute
   '/_app/kalender': typeof AppKalenderRoute
   '/_app/pengar': typeof AppPengarRoute
+  '/auth_/callback': typeof AuthCallbackRoute
+  '/auth_/check-email': typeof AuthCheckEmailRoute
+  '/auth_/confirmed': typeof AuthConfirmedRoute
+  '/auth_/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth_/reset-password': typeof AuthResetPasswordRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +152,11 @@ export interface FileRouteTypes {
     | '/jobb'
     | '/kalender'
     | '/pengar'
+    | '/auth/callback'
+    | '/auth/check-email'
+    | '/auth/confirmed'
+    | '/auth/forgot-password'
+    | '/auth/reset-password'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -117,6 +167,11 @@ export interface FileRouteTypes {
     | '/jobb'
     | '/kalender'
     | '/pengar'
+    | '/auth/callback'
+    | '/auth/check-email'
+    | '/auth/confirmed'
+    | '/auth/forgot-password'
+    | '/auth/reset-password'
   id:
     | '__root__'
     | '/'
@@ -128,12 +183,22 @@ export interface FileRouteTypes {
     | '/_app/jobb'
     | '/_app/kalender'
     | '/_app/pengar'
+    | '/auth_/callback'
+    | '/auth_/check-email'
+    | '/auth_/confirmed'
+    | '/auth_/forgot-password'
+    | '/auth_/reset-password'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthCheckEmailRoute: typeof AuthCheckEmailRoute
+  AuthConfirmedRoute: typeof AuthConfirmedRoute
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -157,6 +222,41 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth_/reset-password': {
+      id: '/auth_/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth_/forgot-password': {
+      id: '/auth_/forgot-password'
+      path: '/auth/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth_/confirmed': {
+      id: '/auth_/confirmed'
+      path: '/auth/confirmed'
+      fullPath: '/auth/confirmed'
+      preLoaderRoute: typeof AuthConfirmedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth_/check-email': {
+      id: '/auth_/check-email'
+      path: '/auth/check-email'
+      fullPath: '/auth/check-email'
+      preLoaderRoute: typeof AuthCheckEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth_/callback': {
+      id: '/auth_/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/pengar': {
@@ -228,6 +328,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthCheckEmailRoute: AuthCheckEmailRoute,
+  AuthConfirmedRoute: AuthConfirmedRoute,
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
