@@ -1,8 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateShift, DEFAULT_OB_RULES } from "@/modules/salary/ob";
+import { applyBreakRules, normalizeBreakRules, DEFAULT_BREAK_RULES, type BreakRules } from "@/modules/salary/breaks";
+import { NumericField } from "@/components/ui/numeric-field";
 import {
   aggregateRange, aggregateByMonth, isoDate, startOfWeek, endOfWeek,
   startOfMonth, endOfMonth, startOfYear, endOfYear, isoWeekNumber,
@@ -16,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   ChevronLeft, ChevronRight, Calendar as CalIcon, Save, Plus, Trash2,
-  Plane, AlertTriangle, Sparkles, Wand2, Copy, X,
+  Plane, AlertTriangle, Sparkles, Wand2, Copy, X, Settings as SettingsIcon, Briefcase,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/planering")({ component: PlaneringPage });
