@@ -146,10 +146,11 @@ function SettingsPage() {
 
   function finishBuilder() {
     if (!builder?.preset) return;
+    const preset = builder.preset;
     setRules((current) => [
       ...current,
       {
-        ...clonePreset(builder.preset, Number(builder.value ?? 0)),
+        ...clonePreset(preset, Number(builder.value ?? 0)),
         from: builder.from,
         to: builder.to,
         type: builder.type,
