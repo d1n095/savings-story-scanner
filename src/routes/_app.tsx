@@ -1,7 +1,7 @@
 import { createFileRoute, redirect, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, Calendar, Wallet, Briefcase, Sparkles, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Calendar, Wallet, Briefcase, Sparkles, Settings, LogOut, Menu, X, CalendarRange } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app")({
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/_app")({
 const NAV = [
   { to: "/dashboard", label: "Översikt", icon: LayoutDashboard },
   { to: "/kalender", label: "Kalender", icon: Calendar },
+  { to: "/planering", label: "Planering", icon: CalendarRange },
   { to: "/jobb", label: "Jobb & lön", icon: Briefcase },
   { to: "/pengar", label: "Pengar", icon: Wallet },
   { to: "/insikter", label: "Insikter", icon: Sparkles },
