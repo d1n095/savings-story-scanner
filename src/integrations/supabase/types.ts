@@ -576,22 +576,30 @@ export type Database = {
       work_profiles: {
         Row: {
           bonus_rules: Json | null
+          break_rules: Json
           collective_agreement: string | null
           commission_rules: Json | null
           created_at: string
+          default_shift_from: string | null
+          default_shift_to: string | null
           employer: string | null
           hourly_rate: number | null
           id: string
           is_default: boolean
+          max_hours_per_day: number | null
+          max_hours_per_week: number | null
           mileage_rate: number | null
+          min_daily_rest_hours: number | null
           monthly_salary: number | null
           name: string
           ob_rules: Json | null
           occupation: string | null
+          on_call_rate: number | null
           overtime_rules: Json | null
           pension_pct: number | null
           per_diem: number | null
           sick_pay_rate: number | null
+          standby_rate: number | null
           tax_rate: number | null
           updated_at: string
           user_id: string
@@ -601,22 +609,30 @@ export type Database = {
         }
         Insert: {
           bonus_rules?: Json | null
+          break_rules?: Json
           collective_agreement?: string | null
           commission_rules?: Json | null
           created_at?: string
+          default_shift_from?: string | null
+          default_shift_to?: string | null
           employer?: string | null
           hourly_rate?: number | null
           id?: string
           is_default?: boolean
+          max_hours_per_day?: number | null
+          max_hours_per_week?: number | null
           mileage_rate?: number | null
+          min_daily_rest_hours?: number | null
           monthly_salary?: number | null
           name?: string
           ob_rules?: Json | null
           occupation?: string | null
+          on_call_rate?: number | null
           overtime_rules?: Json | null
           pension_pct?: number | null
           per_diem?: number | null
           sick_pay_rate?: number | null
+          standby_rate?: number | null
           tax_rate?: number | null
           updated_at?: string
           user_id: string
@@ -626,22 +642,30 @@ export type Database = {
         }
         Update: {
           bonus_rules?: Json | null
+          break_rules?: Json
           collective_agreement?: string | null
           commission_rules?: Json | null
           created_at?: string
+          default_shift_from?: string | null
+          default_shift_to?: string | null
           employer?: string | null
           hourly_rate?: number | null
           id?: string
           is_default?: boolean
+          max_hours_per_day?: number | null
+          max_hours_per_week?: number | null
           mileage_rate?: number | null
+          min_daily_rest_hours?: number | null
           monthly_salary?: number | null
           name?: string
           ob_rules?: Json | null
           occupation?: string | null
+          on_call_rate?: number | null
           overtime_rules?: Json | null
           pension_pct?: number | null
           per_diem?: number | null
           sick_pay_rate?: number | null
+          standby_rate?: number | null
           tax_rate?: number | null
           updated_at?: string
           user_id?: string
