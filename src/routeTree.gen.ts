@@ -9,38 +9,149 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppPengarRouteImport } from './routes/_app/pengar'
+import { Route as AppKalenderRouteImport } from './routes/_app/kalender'
+import { Route as AppJobbRouteImport } from './routes/_app/jobb'
+import { Route as AppInstallningarRouteImport } from './routes/_app/installningar'
+import { Route as AppInsikterRouteImport } from './routes/_app/insikter'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPengarRoute = AppPengarRouteImport.update({
+  id: '/pengar',
+  path: '/pengar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKalenderRoute = AppKalenderRouteImport.update({
+  id: '/kalender',
+  path: '/kalender',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppJobbRoute = AppJobbRouteImport.update({
+  id: '/jobb',
+  path: '/jobb',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInstallningarRoute = AppInstallningarRouteImport.update({
+  id: '/installningar',
+  path: '/installningar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInsikterRoute = AppInsikterRouteImport.update({
+  id: '/insikter',
+  path: '/insikter',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/insikter': typeof AppInsikterRoute
+  '/installningar': typeof AppInstallningarRoute
+  '/jobb': typeof AppJobbRoute
+  '/kalender': typeof AppKalenderRoute
+  '/pengar': typeof AppPengarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/insikter': typeof AppInsikterRoute
+  '/installningar': typeof AppInstallningarRoute
+  '/jobb': typeof AppJobbRoute
+  '/kalender': typeof AppKalenderRoute
+  '/pengar': typeof AppPengarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/insikter': typeof AppInsikterRoute
+  '/_app/installningar': typeof AppInstallningarRoute
+  '/_app/jobb': typeof AppJobbRoute
+  '/_app/kalender': typeof AppKalenderRoute
+  '/_app/pengar': typeof AppPengarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/insikter'
+    | '/installningar'
+    | '/jobb'
+    | '/kalender'
+    | '/pengar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/insikter'
+    | '/installningar'
+    | '/jobb'
+    | '/kalender'
+    | '/pengar'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/auth'
+    | '/_app/dashboard'
+    | '/_app/insikter'
+    | '/_app/installningar'
+    | '/_app/jobb'
+    | '/_app/kalender'
+    | '/_app/pengar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +159,76 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/pengar': {
+      id: '/_app/pengar'
+      path: '/pengar'
+      fullPath: '/pengar'
+      preLoaderRoute: typeof AppPengarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/kalender': {
+      id: '/_app/kalender'
+      path: '/kalender'
+      fullPath: '/kalender'
+      preLoaderRoute: typeof AppKalenderRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/jobb': {
+      id: '/_app/jobb'
+      path: '/jobb'
+      fullPath: '/jobb'
+      preLoaderRoute: typeof AppJobbRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/installningar': {
+      id: '/_app/installningar'
+      path: '/installningar'
+      fullPath: '/installningar'
+      preLoaderRoute: typeof AppInstallningarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/insikter': {
+      id: '/_app/insikter'
+      path: '/insikter'
+      fullPath: '/insikter'
+      preLoaderRoute: typeof AppInsikterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppInsikterRoute: typeof AppInsikterRoute
+  AppInstallningarRoute: typeof AppInstallningarRoute
+  AppJobbRoute: typeof AppJobbRoute
+  AppKalenderRoute: typeof AppKalenderRoute
+  AppPengarRoute: typeof AppPengarRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppDashboardRoute: AppDashboardRoute,
+  AppInsikterRoute: AppInsikterRoute,
+  AppInstallningarRoute: AppInstallningarRoute,
+  AppJobbRoute: AppJobbRoute,
+  AppKalenderRoute: AppKalenderRoute,
+  AppPengarRoute: AppPengarRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
