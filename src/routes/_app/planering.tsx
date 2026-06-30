@@ -47,11 +47,22 @@ function PlaneringPage() {
   }, [mode, anchor]);
 
   const profile = useQuery({
-    queryKey: ["profile"],
+    queryKey: ["profile-with-workprofile"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
-      return data;
+      const [{ data: p }, { data: wps }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle(),
+        supabase.from("work_profiles").select("*").order("is_default", { ascending: false }),
+      ]);
+      const def = wps?.find((w: any) => w.is_default) ?? wps?.[0];
+      // Föredra default arbetsprofil, annars fallback till profile-värden
+      return {
+        ...p,
+        hourly_rate: def?.hourly_rate ?? p?.hourly_rate ?? 0,
+        tax_rate: def?.tax_rate ?? p?.tax_rate ?? 30,
+        ob_rules: def?.ob_rules ?? p?.ob_rules,
+        work_profile_name: def?.name,
+      };
     },
   });
 
