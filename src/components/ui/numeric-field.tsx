@@ -1,13 +1,10 @@
-import { useRef } from "react";
-import { Minus, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Fri numerisk inmatning med valfria snabbknappar.
- * - Skriv valfritt belopp direkt (även decimal: 143 eller 143,50)
- * - Piltangenter ↑/↓ för +/- (steg = `step`)
- * - Snabbknappar (default +1/+5/+10)
- * - Klistra in stöds (filtrerar fram siffror + komma/punkt)
+ * Konsumentvänligt nummerfält.
+ * Standardläget är alltid fri inmatning: skriv, markera, klistra in, decimaler.
+ * Native-känsla: mushjul och piltangenter fungerar utan synlig stepper.
  */
 export function NumericField({
   value,
@@ -39,7 +36,12 @@ export function NumericField({
   ariaLabel?: string;
 }) {
   const ref = useRef<HTMLInputElement>(null);
-  const display = value === null || value === undefined || Number.isNaN(value) ? "" : String(value);
+  const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    const next = value === null || value === undefined || Number.isNaN(value) ? "" : String(value);
+    if (document.activeElement !== ref.current) setDraft(next);
+  }, [value]);
 
   const clamp = (n: number) => {
     if (typeof min === "number" && n < min) n = min;
@@ -56,44 +58,42 @@ export function NumericField({
 
   const bump = (delta: number) => {
     const cur = typeof value === "number" && !Number.isNaN(value) ? value : 0;
-    onChange(clamp(cur + delta));
+    const next = clamp(cur + delta);
+    setDraft(String(next));
+    onChange(next);
     ref.current?.focus();
   };
 
   const steps = quickSteps ?? [1, 5, 10];
 
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
-      <div className="flex items-stretch overflow-hidden rounded-lg border border-border bg-input/40 focus-within:border-[oklch(0.85_0.12_85/0.5)]">
-        <button
-          type="button"
-          onClick={() => bump(-step)}
-          className="grid w-9 place-items-center border-r border-border text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
-          aria-label="Minska"
-        >
-          <Minus className="h-3.5 w-3.5" />
-        </button>
+    <div className={cn("flex flex-col gap-2", className)}>
+      <div className="flex min-h-12 items-center overflow-hidden rounded-2xl border border-border bg-input/40 focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-ring/25">
         <input
           ref={ref}
-          type="text"
+          type="number"
           inputMode="decimal"
+          step={step}
+          min={min}
+          max={max}
           autoComplete="off"
-          value={display}
+          value={draft}
           placeholder={placeholder}
           aria-label={ariaLabel}
           onChange={(e) => {
-            const v = e.target.value;
-            // Tillåt tom, siffror, ett kommatecken/punkt, minus i början
-            if (v === "" || /^-?\d*[.,]?\d*$/.test(v)) {
-              onChange(parse(v));
-            }
+            const raw = e.target.value;
+            setDraft(raw);
+            const parsed = parse(raw);
+            onChange(parsed === null ? null : clamp(parsed));
           }}
           onPaste={(e) => {
             const txt = e.clipboardData.getData("text");
             const n = parse(txt);
             if (n !== null) {
               e.preventDefault();
-              onChange(clamp(n));
+              const next = clamp(n);
+              setDraft(String(next));
+              onChange(next);
             }
           }}
           onKeyDown={(e) => {
@@ -103,41 +103,25 @@ export function NumericField({
             else if (e.key === "PageDown") { e.preventDefault(); bump(-step * 10); }
           }}
           className={cn(
-            "min-w-0 flex-1 bg-transparent px-3 py-2 text-right text-sm tabular-nums outline-none",
+            "number-input-no-spinner min-w-0 flex-1 bg-transparent px-4 py-3 text-base tabular-nums outline-none",
             inputClassName,
           )}
         />
         {suffix && (
-          <span className="grid place-items-center border-l border-border bg-white/[0.02] px-2.5 text-xs text-muted-foreground">
+          <span className="grid place-items-center border-l border-border bg-secondary/40 px-3 text-sm text-muted-foreground">
             {suffix}
           </span>
         )}
-        <button
-          type="button"
-          onClick={() => bump(step)}
-          className="grid w-9 place-items-center border-l border-border text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
-          aria-label="Öka"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
       </div>
       {showQuick && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {steps.map((s) => (
             <button
               key={`p${s}`}
               type="button"
               onClick={() => bump(s)}
-              className="rounded-full border border-border bg-white/[0.02] px-2 py-0.5 text-[10px] tabular-nums text-muted-foreground hover:border-[oklch(0.85_0.12_85/0.4)] hover:text-[oklch(0.85_0.12_85)]"
+              className="rounded-full border border-border bg-secondary/30 px-3 py-1 text-xs tabular-nums text-muted-foreground transition hover:border-primary/50 hover:text-primary"
             >+{s}</button>
-          ))}
-          {steps.map((s) => (
-            <button
-              key={`m${s}`}
-              type="button"
-              onClick={() => bump(-s)}
-              className="rounded-full border border-border bg-white/[0.02] px-2 py-0.5 text-[10px] tabular-nums text-muted-foreground hover:border-[oklch(0.65_0.12_28/0.4)] hover:text-[oklch(0.7_0.12_28)]"
-            >−{s}</button>
           ))}
         </div>
       )}
