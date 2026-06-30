@@ -63,7 +63,19 @@ function SettingsPage() {
         <h1 className="display text-4xl">Din profil & regler</h1>
       </header>
 
-      <section className="glass rounded-3xl p-6">
+      <Link to="/installningar/lon-arbete"
+        className="group flex items-center justify-between rounded-3xl border border-[oklch(0.85_0.12_85/0.3)] bg-gradient-to-r from-[oklch(0.85_0.12_85/0.08)] to-transparent p-5 transition hover:border-[oklch(0.85_0.12_85/0.6)]">
+        <div className="flex items-center gap-4">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[oklch(0.85_0.12_85/0.15)]">
+            <Briefcase className="h-5 w-5 text-[oklch(0.85_0.12_85)]" />
+          </div>
+          <div>
+            <div className="display text-lg">Lön & Arbete</div>
+            <div className="text-xs text-muted-foreground">Arbetsprofiler, timlön, OB, skatt, semester, ersättningar</div>
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-[oklch(0.85_0.12_85)]" />
+      </Link>
         <h2 className="display mb-4 text-xl">Personligt</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <F label="Namn"><input value={name} onChange={e => setName(e.target.value)} className="inp" /></F>
