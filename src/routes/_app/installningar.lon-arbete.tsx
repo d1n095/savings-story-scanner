@@ -178,10 +178,30 @@ function ProfileEditor({ initial, onSaved }: { initial: WorkProfile; onSaved: ()
 
       <Section title="Lön & skatt">
         <Grid>
-          <F label="Timlön (kr)"><input type="number" value={p.hourly_rate ?? 0} onChange={e => setP({ ...p, hourly_rate: +e.target.value })} className={inp()} /></F>
-          <F label="Månadslön (kr, valfritt)"><input type="number" value={p.monthly_salary ?? ""} onChange={e => setP({ ...p, monthly_salary: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="Skattesats (%)"><input type="number" value={p.tax_rate ?? 30} onChange={e => setP({ ...p, tax_rate: +e.target.value })} className={inp()} /></F>
-          <F label="Semesterdagar/år"><input type="number" value={p.vacation_days_per_year ?? 25} onChange={e => setP({ ...p, vacation_days_per_year: +e.target.value })} className={inp()} /></F>
+          <F label="Timlön (kr/h)">
+            <NumericField value={p.hourly_rate} onChange={(v) => setP({ ...p, hourly_rate: v })} min={0} step={1} quickSteps={[1, 5, 10]} suffix="kr" />
+          </F>
+          <F label="Månadslön (kr, valfritt)">
+            <NumericField value={p.monthly_salary} onChange={(v) => setP({ ...p, monthly_salary: v })} min={0} step={100} quickSteps={[100, 500, 1000]} suffix="kr" />
+          </F>
+          <F label="Skattesats (%)">
+            <NumericField value={p.tax_rate} onChange={(v) => setP({ ...p, tax_rate: v })} min={0} max={70} step={1} quickSteps={[1, 5]} suffix="%" />
+          </F>
+          <F label="Semesterdagar/år">
+            <NumericField value={p.vacation_days_per_year} onChange={(v) => setP({ ...p, vacation_days_per_year: v })} min={0} max={60} step={1} quickSteps={[1, 5]} showQuick={false} suffix="dgr" />
+          </F>
+        </Grid>
+      </Section>
+
+      <BreakRulesSection rules={normalizeBreakRules(p.break_rules)} onChange={(r) => setP({ ...p, break_rules: r })} />
+
+      <Section title="Arbetstid">
+        <Grid>
+          <F label="Standardpass från"><input type="time" value={p.default_shift_from ?? ""} onChange={e => setP({ ...p, default_shift_from: e.target.value || null })} className={inp()} /></F>
+          <F label="Standardpass till"><input type="time" value={p.default_shift_to ?? ""} onChange={e => setP({ ...p, default_shift_to: e.target.value || null })} className={inp()} /></F>
+          <F label="Max timmar/dag"><NumericField value={p.max_hours_per_day} onChange={(v) => setP({ ...p, max_hours_per_day: v })} min={0} max={24} step={1} quickSteps={[1]} showQuick={false} suffix="h" /></F>
+          <F label="Max timmar/vecka"><NumericField value={p.max_hours_per_week} onChange={(v) => setP({ ...p, max_hours_per_week: v })} min={0} max={168} step={1} quickSteps={[1, 5]} showQuick={false} suffix="h" /></F>
+          <F label="Minsta dygnsvila"><NumericField value={p.min_daily_rest_hours} onChange={(v) => setP({ ...p, min_daily_rest_hours: v })} min={0} max={24} step={1} quickSteps={[1]} showQuick={false} suffix="h" /></F>
         </Grid>
       </Section>
 
@@ -204,7 +224,9 @@ function ProfileEditor({ initial, onSaved }: { initial: WorkProfile; onSaved: ()
                       <option value="amount">kr/h</option><option value="percent">%</option>
                     </select>
                   </F></div>
-                  <div className="sm:col-span-2"><F label="Värde"><input type="number" value={r.value} onChange={e => setRules(rules.map(x => x.id === r.id ? { ...x, value: +e.target.value } : x))} className={inp()} /></F></div>
+                  <div className="sm:col-span-2"><F label="Värde">
+                    <NumericField value={r.value} onChange={(v) => setRules(rules.map(x => x.id === r.id ? { ...x, value: v ?? 0 } : x))} min={0} step={1} showQuick={false} />
+                  </F></div>
                   <div className="flex items-end sm:col-span-1">
                     <button type="button" onClick={() => setRules(rules.filter(x => x.id !== r.id))} className="ml-auto grid h-9 w-9 place-items-center rounded-lg hover:bg-[oklch(0.65_0.12_28/0.1)] hover:text-[oklch(0.7_0.12_28)]"><Trash2 className="h-4 w-4" /></button>
                   </div>
@@ -228,11 +250,13 @@ function ProfileEditor({ initial, onSaved }: { initial: WorkProfile; onSaved: ()
 
       <Section title="Ersättningar (valfritt)">
         <Grid>
-          <F label="Sjuklön (kr/h)"><input type="number" value={p.sick_pay_rate ?? ""} onChange={e => setP({ ...p, sick_pay_rate: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="VAB (kr/h)"><input type="number" value={p.vab_rate ?? ""} onChange={e => setP({ ...p, vab_rate: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="Traktamente (kr/dag)"><input type="number" value={p.per_diem ?? ""} onChange={e => setP({ ...p, per_diem: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="Milersättning (kr/mil)"><input type="number" value={p.mileage_rate ?? ""} onChange={e => setP({ ...p, mileage_rate: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="Tjänstepension (%)"><input type="number" value={p.pension_pct ?? ""} onChange={e => setP({ ...p, pension_pct: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
+          <F label="Sjuklön (kr/h)"><NumericField value={p.sick_pay_rate} onChange={(v) => setP({ ...p, sick_pay_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="VAB (kr/h)"><NumericField value={p.vab_rate} onChange={(v) => setP({ ...p, vab_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="Jour (kr/h)"><NumericField value={p.on_call_rate} onChange={(v) => setP({ ...p, on_call_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="Beredskap (kr/h)"><NumericField value={p.standby_rate} onChange={(v) => setP({ ...p, standby_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="Traktamente (kr/dag)"><NumericField value={p.per_diem} onChange={(v) => setP({ ...p, per_diem: v })} min={0} step={10} showQuick={false} suffix="kr" /></F>
+          <F label="Milersättning (kr/mil)"><NumericField value={p.mileage_rate} onChange={(v) => setP({ ...p, mileage_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="Tjänstepension (%)"><NumericField value={p.pension_pct} onChange={(v) => setP({ ...p, pension_pct: v })} min={0} max={50} step={0.5} showQuick={false} suffix="%" /></F>
         </Grid>
       </Section>
 
