@@ -17,6 +17,7 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth_.forgot-pa
 import { Route as AuthConfirmedRouteImport } from './routes/auth_.confirmed'
 import { Route as AuthCheckEmailRouteImport } from './routes/auth_.check-email'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
+import { Route as AppPlaneringRouteImport } from './routes/_app/planering'
 import { Route as AppPengarRouteImport } from './routes/_app/pengar'
 import { Route as AppKalenderRouteImport } from './routes/_app/kalender'
 import { Route as AppJobbRouteImport } from './routes/_app/jobb'
@@ -63,6 +64,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPlaneringRoute = AppPlaneringRouteImport.update({
+  id: '/planering',
+  path: '/planering',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPengarRoute = AppPengarRouteImport.update({
   id: '/pengar',
   path: '/pengar',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
+  '/planering': typeof AppPlaneringRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/check-email': typeof AuthCheckEmailRoute
   '/auth/confirmed': typeof AuthConfirmedRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
+  '/planering': typeof AppPlaneringRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/check-email': typeof AuthCheckEmailRoute
   '/auth/confirmed': typeof AuthConfirmedRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/_app/jobb': typeof AppJobbRoute
   '/_app/kalender': typeof AppKalenderRoute
   '/_app/pengar': typeof AppPengarRoute
+  '/_app/planering': typeof AppPlaneringRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/auth_/check-email': typeof AuthCheckEmailRoute
   '/auth_/confirmed': typeof AuthConfirmedRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/jobb'
     | '/kalender'
     | '/pengar'
+    | '/planering'
     | '/auth/callback'
     | '/auth/check-email'
     | '/auth/confirmed'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/jobb'
     | '/kalender'
     | '/pengar'
+    | '/planering'
     | '/auth/callback'
     | '/auth/check-email'
     | '/auth/confirmed'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/_app/jobb'
     | '/_app/kalender'
     | '/_app/pengar'
+    | '/_app/planering'
     | '/auth_/callback'
     | '/auth_/check-email'
     | '/auth_/confirmed'
@@ -259,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/planering': {
+      id: '/_app/planering'
+      path: '/planering'
+      fullPath: '/planering'
+      preLoaderRoute: typeof AppPlaneringRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/pengar': {
       id: '/_app/pengar'
       path: '/pengar'
@@ -311,6 +330,7 @@ interface AppRouteChildren {
   AppJobbRoute: typeof AppJobbRoute
   AppKalenderRoute: typeof AppKalenderRoute
   AppPengarRoute: typeof AppPengarRoute
+  AppPlaneringRoute: typeof AppPlaneringRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -320,6 +340,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppJobbRoute: AppJobbRoute,
   AppKalenderRoute: AppKalenderRoute,
   AppPengarRoute: AppPengarRoute,
+  AppPlaneringRoute: AppPlaneringRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

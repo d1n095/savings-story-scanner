@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      absences: {
+        Row: {
+          created_at: string
+          ends_on: string
+          id: string
+          kind: Database["public"]["Enums"]["absence_kind"]
+          note: string | null
+          paid: boolean
+          starts_on: string
+          status: Database["public"]["Enums"]["absence_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_on: string
+          id?: string
+          kind?: Database["public"]["Enums"]["absence_kind"]
+          note?: string | null
+          paid?: boolean
+          starts_on: string
+          status?: Database["public"]["Enums"]["absence_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_on?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["absence_kind"]
+          note?: string | null
+          paid?: boolean
+          starts_on?: string
+          status?: Database["public"]["Enums"]["absence_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_memory: {
         Row: {
           confidence: number | null
@@ -91,11 +130,14 @@ export type Database = {
           display_name: string | null
           hourly_rate: number | null
           id: string
+          max_week_hours: number
+          min_rest_hours: number
           monthly_buffer_goal: number | null
           ob_rules: Json | null
           onboarded: boolean | null
           tax_rate: number | null
           updated_at: string
+          vacation_days_per_year: number
         }
         Insert: {
           avatar_url?: string | null
@@ -104,11 +146,14 @@ export type Database = {
           display_name?: string | null
           hourly_rate?: number | null
           id: string
+          max_week_hours?: number
+          min_rest_hours?: number
           monthly_buffer_goal?: number | null
           ob_rules?: Json | null
           onboarded?: boolean | null
           tax_rate?: number | null
           updated_at?: string
+          vacation_days_per_year?: number
         }
         Update: {
           avatar_url?: string | null
@@ -117,11 +162,14 @@ export type Database = {
           display_name?: string | null
           hourly_rate?: number | null
           id?: string
+          max_week_hours?: number
+          min_rest_hours?: number
           monthly_buffer_goal?: number | null
           ob_rules?: Json | null
           onboarded?: boolean | null
           tax_rate?: number | null
           updated_at?: string
+          vacation_days_per_year?: number
         }
         Relationships: []
       }
@@ -155,6 +203,36 @@ export type Database = {
           remind_at?: string
           title?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      rotations: {
+        Row: {
+          created_at: string
+          cycle_weeks: number
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+          weeks_json: Json
+        }
+        Insert: {
+          created_at?: string
+          cycle_weeks?: number
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+          weeks_json?: Json
+        }
+        Update: {
+          created_at?: string
+          cycle_weeks?: number
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+          weeks_json?: Json
         }
         Relationships: []
       }
@@ -296,6 +374,62 @@ export type Database = {
         }
         Relationships: []
       }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       timeline_events: {
         Row: {
           amount: number | null
@@ -368,6 +502,66 @@ export type Database = {
         }
         Relationships: []
       }
+      vacation_balance: {
+        Row: {
+          created_at: string
+          id: string
+          saved_days: number
+          total_days: number
+          updated_at: string
+          used_days: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          saved_days?: number
+          total_days?: number
+          updated_at?: string
+          used_days?: number
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          saved_days?: number
+          total_days?: number
+          updated_at?: string
+          used_days?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      weekly_patterns: {
+        Row: {
+          created_at: string
+          days_json: Json
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_json?: Json
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days_json?: Json
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -382,6 +576,8 @@ export type Database = {
       }
     }
     Enums: {
+      absence_kind: "vacation" | "sick" | "vab" | "leave" | "other"
+      absence_status: "planned" | "approved" | "taken"
       app_role: "admin" | "user"
       expense_category:
         | "mat"
@@ -534,6 +730,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      absence_kind: ["vacation", "sick", "vab", "leave", "other"],
+      absence_status: ["planned", "approved", "taken"],
       app_role: ["admin", "user"],
       expense_category: [
         "mat",

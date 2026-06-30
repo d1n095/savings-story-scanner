@@ -1,66 +1,89 @@
-## Mål
-Stabilt auth-flöde där du aldrig fastnar. Tydliga svenska texter, snygga states, korrekt resend och reset, och rätt dev-inställning för Lovable preview.
+# Planning Engine — Vecka / Månad / Halvår / År
 
-## Rekommendation för dev-läge
-**Alternativ A — auto-confirm PÅ under utveckling.** I Lovable preview kan vi inte garantera SMTP-leverans till Proton/Gmail på sekunder, och du måste kunna iterera utan att fastna. Vi aktiverar auto-confirm nu så att signup → direkt inloggad. Hela bekräftelse-/resend-/reset-flödet byggs ändå färdigt, och inför skarp lansering stänger vi av auto-confirm + kopplar egna mallar.
+Bygger ovanpå befintliga Calendar Engine + Salary Engine. Allt regelstyrt, inga AI-kostnader.
 
-Vill du istället behålla bekräftelse även i dev säger du bara till så hoppar vi över auto-confirm-steget — allt UI fungerar lika bra.
+## 1. Databas (migration)
 
-## Vad jag gör
+Nya tabeller (alla med RLS scoped till `auth.uid()`, GRANT till `authenticated` + `service_role`):
 
-### 1. Supabase Auth-konfiguration
-- Aktivera `auto_confirm_email = true` (dev). Behåller `disable_signup=false`, `external_anonymous_users_enabled=false`, `password_hibp_enabled=true`.
-- Säkerställ Google-provider via `configure_social_auth` (om inte redan aktiv).
-- Site URL/Redirect URLs hanteras av Lovable Cloud — inget manuellt steg krävs för preview-domänen.
+- **`absences`** — semester/sjuk/VAB/tjänstledigt. Fält: `user_id`, `kind` (enum: `vacation|sick|vab|leave|other`), `starts_on`, `ends_on`, `note`, `paid` (bool), `status` (`planned|approved|taken`).
+- **`weekly_patterns`** — återanvändbara veckomönster. Fält: `user_id`, `name`, `days_json` (jsonb: `[{weekday, from, to, break_minutes, template_id?}]`).
+- **`rotations`** — roterande scheman (2-skift, 3-skift, dag/kväll/natt). Fält: `user_id`, `name`, `weeks_json` (jsonb: array av weekly_patterns per rotationsvecka), `cycle_weeks`.
+- **`vacation_balance`** — semesterkonto. Fält: `user_id`, `year`, `total_days`, `used_days`, `saved_days`.
+- **(förberedande för Business)** `teams`, `team_members` — skapas men oanvända i UI nu, redo för chef-vyn senare.
 
-### 2. Auth-sidor (nya/uppdaterade routes)
-- `/auth` — login + signup (uppdaterad med svensk felhantering + "skicka bekräftelse igen"-knapp som visas vid `email_not_confirmed`).
-- `/auth/check-email` — "Kolla din mail"-skärm efter signup när bekräftelse krävs. Knappar: Skicka igen · Jag har bekräftat · Ändra e-post · Tillbaka till login.
-- `/auth/forgot-password` — be om e-post → `resetPasswordForEmail` med `redirectTo: ${origin}/auth/reset-password`.
-- `/auth/reset-password` — publik route, läser `type=recovery` från hash, sätter nytt lösenord via `updateUser`.
-- `/auth/callback` — publik route som tar emot OAuth/magic link, väntar på session, redirectar till sparad destination eller `/dashboard`.
-- `/auth/confirmed` — success-sida efter klick i bekräftelsemail.
+## 2. Planning Engine-modul (`src/modules/planning/`)
 
-### 3. Felöversättning (svenska, mänskliga)
-En liten `mapAuthError(err)`-hjälpare som översätter:
-- `Email not confirmed` → "Din e-postadress är inte bekräftad ännu." + actions
-- `Invalid login credentials` → "Fel e-post eller lösenord."
-- `User already registered` → "Det finns redan ett konto med den e-posten. Logga in istället."
-- `Email rate limit exceeded` → "Vi har redan skickat ett mail nyligen. Vänta en minut och försök igen."
-- `Token has expired or is invalid` → "Länken är ogiltig eller har gått ut. Skicka en ny."
-- `Password should be at least…` → "Lösenordet är för svagt. Minst 6 tecken."
-- `Failed to fetch` / nätverk → "Nätverksproblem. Kolla din anslutning och försök igen."
-- OAuth-fel → "Inloggning med Google misslyckades. Försök igen."
-- Fallback → vänlig generisk text + "Kontakta support".
+- `views.ts` — aggregering: hours/brutto/netto/OB/röda dagar/semester per dag/vecka/månad/kvartal/halvår/år. Använder befintlig `calculateShift` + `holidaysForYear`.
+- `tax.ts` — enkel netto-uppskattning (svensk schablon, justerbar i inställningar; default 30%).
+- `vacation.ts` — semesteranalys: räkna semesterdagar (vardagar), totalt lediga (inkl. helger/röda dagar), påverkade pass, förlorad OB, "stretch"-förslag (lägg till en dag → X extra lediga).
+- `rotations.ts` — expandera rotation till konkreta veckor över valt intervall.
+- `conflicts.ts` (utöka befintlig) — semesterkrock med pass, dubbelbokning av frånvaro, vilotid <11h mellan pass, >40h/vecka, >50h/vecka.
 
-### 4. Resend confirmation
-`supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: ${origin}/auth/confirmed } })` med toast + cooldown (60s) för att undvika rate limit.
+## 3. UI — `/jobb` blir Planning Hub
 
-### 5. Session & skydd
-- `_app`-layouten behåller redirect till `/auth` om ingen session.
-- `__root.tsx` får en `onAuthStateChange`-listener som invaliderar router endast på `SIGNED_IN/SIGNED_OUT/USER_UPDATED`.
-- Profil skapas redan via `handle_new_user`-trigger — kvarstår. Lägger till en defensiv "skapa profil om saknas"-upsert vid första `/dashboard`-laddning så gamla konton inte fastnar utan rad.
+Behåller befintlig Shift Engine men lägger till **vy-växlare** högst upp: Dag · Vecka · Månad · Kvartal · Halvår · År.
 
-### 6. Mailmallar (förberedelse, inte aktivering)
-Lägger en `MAIL_TEMPLATES.md` med svenska utkast för: Bekräfta e-post, Återställ lösenord, Magic link, Välkommen. Ton: premium/mörk/lugn. Aktiveras när du kopplar egen domän via Lovable Emails inför launch.
+- **Vecko-vy** (default): 7 rader (mån–sön), klicka in tider direkt eller välj mall-chip. "Spara vecka" → batch-insert. Live-summa: timmar, brutto, netto, OB, pass, lediga, varningar.
+- **Månadsvy**: kalendergrid med pass-pillar per dag, röda dagar markerade, semester-overlay. Knappar: "Kopiera förra månaden", "Använd mönster", "Mån–fre 08–16 hela månaden", "Varannan helg".
+- **Kvartal/Halvår**: 3/6 mini-månader sida vid sida med summa-rad per månad.
+- **År-vy**: 12 månadskort. Varje kort: timmar, brutto, netto, OB, semesterdagar, röda dagar. Klick → drill-down.
+- **Drill-down**: År → Månad → Vecka → Dag → Passdetalj (varje nivå är en route-state, inte ny route — håll det enkelt).
 
-### 7. Säkerhet
-- RLS oförändrat. Inga policies öppnas.
-- HIBP-skydd på lösenord aktiveras.
-- Reset-password-routen är medvetet publik (krav från Supabase recovery-flöde).
+## 4. Semesterpanel (`/jobb` flik "Semester")
 
-## Filer som rörs
-- `supabase--configure_auth` (auto-confirm på)
-- `src/routes/auth.tsx` (uppdaterad)
-- `src/routes/auth.check-email.tsx`, `auth.forgot-password.tsx`, `auth.reset-password.tsx`, `auth.callback.tsx`, `auth.confirmed.tsx` (nya)
-- `src/lib/auth-errors.ts` (ny — svensk felmappning + resend helper)
-- `src/routes/__root.tsx` (onAuthStateChange-listener)
-- `MAIL_TEMPLATES.md` (ny — utkast inför launch)
+- Markera datumintervall i kalender → visa:
+  - semesterdagar förbrukade (vardagar)
+  - totalt lediga (med helger/röda)
+  - påverkade pass (lista)
+  - förlorad OB (kr)
+  - "stretch-tips": "Lägg till fredag → 4 extra lediga dagar"
+- Spara → skriv till `absences` + skapa `timeline_events`.
+- Semesterkonto-widget (år, kvar, använt).
 
-## Vad du gör efteråt
-1. Skapa nytt konto → blir direkt inloggad på `/dashboard` (auto-confirm i dev).
-2. Testa "Glömt lösenord" → mail kommer (Supabase default), klicka, sätt nytt.
-3. Testa Google-login.
-4. När vi närmar oss launch: säg till så stänger jag auto-confirm och scaffoldar Lovable Emails med dina svenska mallar + egen domän.
+## 5. Rotationer & mönster (flik "Mönster")
 
-Tryck **Implement plan** så kör jag.
+- Skapa weekly_pattern visuellt (7 rader).
+- Skapa rotation (N veckor av patterns).
+- "Applicera på period" → välj startdatum + slutdatum → expand → conflict check → bulk-insert.
+- Snabb-presets: 2-skift (dag/kväll), 3-skift (dag/kväll/natt), Nattvecka, Varannan helg.
+
+## 6. Varningar (utbyggd `conflicts.ts`)
+
+Visa som chip-lista i varje vy:
+- >40h/vecka (gult), >50h (rött)
+- <11h vila mellan pass
+- semester över befintliga pass
+- dubbelbokad frånvaro
+- saknad rast på 6h+
+- ovanligt låg/hög OB (jmf användarens snitt)
+
+## 7. Inställningar (`/installningar`)
+
+Lägg till sektion "Lön & skatt":
+- Skattesats (slider 0–60%, default 30%)
+- Semesterdagar/år (default 25)
+- Min vila mellan pass (default 11h)
+- Max timmar/vecka varning (default 40)
+
+## 8. Design
+
+- Vy-växlare = segmented control (Champagne gold accent på aktiv).
+- Månadsgrid: glas-effekt, röda dagar i mjuk röd-orange, semester i champagne, pass i pearl.
+- Sammanfattningskort: stora siffror, små labels, progress-bars för månads-mål.
+- Inga 500 knappar — primär CTA + 2–3 mall-chips per vy.
+
+## 9. Vad jag INTE bygger nu (markeras "kommer snart")
+
+- Drag/drop pass mellan dagar (mycket UI-arbete, lägger till i version 2).
+- Team-vy/godkännandeflöde (tabeller skapas, UI senare).
+- Importera schema från Medvind PDF (separat senare).
+
+## Teknisk översikt (för dig som vill veta)
+
+- Allt aggregat beräknas client-side från en enda `shifts`-query för perioden — inga nya RPC:er behövs.
+- React Query keys per period (`["planning", userId, "month", "2026-07"]`) för snabb drill-down utan refetch.
+- Semester-overlay = `absences`-query filtrerad på samma intervall.
+- Rotationsexpand sker i minnet innan batch-insert.
+
+Säg klart så kör jag migration + kod.
