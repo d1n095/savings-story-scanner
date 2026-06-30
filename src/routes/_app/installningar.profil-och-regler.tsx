@@ -6,7 +6,7 @@ import { DEFAULT_OB_RULES, type OBRule } from "@/modules/salary/ob";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, ShieldCheck, Briefcase, ChevronRight } from "lucide-react";
 
-export const Route = createFileRoute("/_app/installningar")({ component: SettingsPage });
+export const Route = createFileRoute("/_app/installningar/profil-och-regler")({ component: SettingsPage });
 
 const DAYS = ["Sön","Mån","Tis","Ons","Tor","Fre","Lör"];
 

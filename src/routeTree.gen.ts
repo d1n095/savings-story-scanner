@@ -21,9 +21,9 @@ import { Route as AppPlaneringRouteImport } from './routes/_app/planering'
 import { Route as AppPengarRouteImport } from './routes/_app/pengar'
 import { Route as AppKalenderRouteImport } from './routes/_app/kalender'
 import { Route as AppJobbRouteImport } from './routes/_app/jobb'
-import { Route as AppInstallningarRouteImport } from './routes/_app/installningar'
 import { Route as AppInsikterRouteImport } from './routes/_app/insikter'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppInstallningarProfilOchReglerRouteImport } from './routes/_app/installningar.profil-och-regler'
 import { Route as AppInstallningarLonArbeteRouteImport } from './routes/_app/installningar.lon-arbete'
 
 const AuthRoute = AuthRouteImport.update({
@@ -85,11 +85,6 @@ const AppJobbRoute = AppJobbRouteImport.update({
   path: '/jobb',
   getParentRoute: () => AppRoute,
 } as any)
-const AppInstallningarRoute = AppInstallningarRouteImport.update({
-  id: '/installningar',
-  path: '/installningar',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppInsikterRoute = AppInsikterRouteImport.update({
   id: '/insikter',
   path: '/insikter',
@@ -100,11 +95,17 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInstallningarProfilOchReglerRoute =
+  AppInstallningarProfilOchReglerRouteImport.update({
+    id: '/installningar/profil-och-regler',
+    path: '/installningar/profil-och-regler',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppInstallningarLonArbeteRoute =
   AppInstallningarLonArbeteRouteImport.update({
-    id: '/lon-arbete',
-    path: '/lon-arbete',
-    getParentRoute: () => AppInstallningarRoute,
+    id: '/installningar/lon-arbete',
+    path: '/installningar/lon-arbete',
+    getParentRoute: () => AppRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -112,7 +113,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/insikter': typeof AppInsikterRoute
-  '/installningar': typeof AppInstallningarRouteWithChildren
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
@@ -123,13 +123,13 @@ export interface FileRoutesByFullPath {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
+  '/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/insikter': typeof AppInsikterRoute
-  '/installningar': typeof AppInstallningarRouteWithChildren
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
@@ -140,6 +140,7 @@ export interface FileRoutesByTo {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
+  '/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -148,7 +149,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/insikter': typeof AppInsikterRoute
-  '/_app/installningar': typeof AppInstallningarRouteWithChildren
   '/_app/jobb': typeof AppJobbRoute
   '/_app/kalender': typeof AppKalenderRoute
   '/_app/pengar': typeof AppPengarRoute
@@ -159,6 +159,7 @@ export interface FileRoutesById {
   '/auth_/forgot-password': typeof AuthForgotPasswordRoute
   '/auth_/reset-password': typeof AuthResetPasswordRoute
   '/_app/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
+  '/_app/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,7 +168,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/insikter'
-    | '/installningar'
     | '/jobb'
     | '/kalender'
     | '/pengar'
@@ -178,13 +178,13 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/installningar/lon-arbete'
+    | '/installningar/profil-och-regler'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/dashboard'
     | '/insikter'
-    | '/installningar'
     | '/jobb'
     | '/kalender'
     | '/pengar'
@@ -195,6 +195,7 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/installningar/lon-arbete'
+    | '/installningar/profil-och-regler'
   id:
     | '__root__'
     | '/'
@@ -202,7 +203,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/dashboard'
     | '/_app/insikter'
-    | '/_app/installningar'
     | '/_app/jobb'
     | '/_app/kalender'
     | '/_app/pengar'
@@ -213,6 +213,7 @@ export interface FileRouteTypes {
     | '/auth_/forgot-password'
     | '/auth_/reset-password'
     | '/_app/installningar/lon-arbete'
+    | '/_app/installningar/profil-och-regler'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -312,13 +313,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJobbRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/installningar': {
-      id: '/_app/installningar'
-      path: '/installningar'
-      fullPath: '/installningar'
-      preLoaderRoute: typeof AppInstallningarRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/insikter': {
       id: '/_app/insikter'
       path: '/insikter'
@@ -333,45 +327,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/installningar/profil-och-regler': {
+      id: '/_app/installningar/profil-och-regler'
+      path: '/installningar/profil-och-regler'
+      fullPath: '/installningar/profil-och-regler'
+      preLoaderRoute: typeof AppInstallningarProfilOchReglerRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/installningar/lon-arbete': {
       id: '/_app/installningar/lon-arbete'
-      path: '/lon-arbete'
+      path: '/installningar/lon-arbete'
       fullPath: '/installningar/lon-arbete'
       preLoaderRoute: typeof AppInstallningarLonArbeteRouteImport
-      parentRoute: typeof AppInstallningarRoute
+      parentRoute: typeof AppRoute
     }
   }
 }
 
-interface AppInstallningarRouteChildren {
-  AppInstallningarLonArbeteRoute: typeof AppInstallningarLonArbeteRoute
-}
-
-const AppInstallningarRouteChildren: AppInstallningarRouteChildren = {
-  AppInstallningarLonArbeteRoute: AppInstallningarLonArbeteRoute,
-}
-
-const AppInstallningarRouteWithChildren =
-  AppInstallningarRoute._addFileChildren(AppInstallningarRouteChildren)
-
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppInsikterRoute: typeof AppInsikterRoute
-  AppInstallningarRoute: typeof AppInstallningarRouteWithChildren
   AppJobbRoute: typeof AppJobbRoute
   AppKalenderRoute: typeof AppKalenderRoute
   AppPengarRoute: typeof AppPengarRoute
   AppPlaneringRoute: typeof AppPlaneringRoute
+  AppInstallningarLonArbeteRoute: typeof AppInstallningarLonArbeteRoute
+  AppInstallningarProfilOchReglerRoute: typeof AppInstallningarProfilOchReglerRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppInsikterRoute: AppInsikterRoute,
-  AppInstallningarRoute: AppInstallningarRouteWithChildren,
   AppJobbRoute: AppJobbRoute,
   AppKalenderRoute: AppKalenderRoute,
   AppPengarRoute: AppPengarRoute,
   AppPlaneringRoute: AppPlaneringRoute,
+  AppInstallningarLonArbeteRoute: AppInstallningarLonArbeteRoute,
+  AppInstallningarProfilOchReglerRoute: AppInstallningarProfilOchReglerRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
