@@ -492,6 +492,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_defaults: {
+        Row: {
+          confidence: number
+          id: string
+          key: string
+          updated_at: string
+          user_id: string
+          value: Json
+        }
+        Insert: {
+          confidence?: number
+          id?: string
+          key: string
+          updated_at?: string
+          user_id: string
+          value: Json
+        }
+        Update: {
+          confidence?: number
+          id?: string
+          key?: string
+          updated_at?: string
+          user_id?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

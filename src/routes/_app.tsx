@@ -2,11 +2,11 @@ import { createFileRoute, redirect, Link, Outlet, useRouter, useRouterState } fr
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Calendar, Wallet, Sparkles, MoreHorizontal, Settings, LogOut, Menu, X,
-  CalendarRange, Briefcase, LayoutDashboard, User as UserIcon,
+  Calendar, Wallet, Sun, MoreHorizontal, Settings, LogOut, Menu, X,
+  CalendarRange, Briefcase, LayoutDashboard, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { QuickAddFab } from "@/components/quick-add-sheet";
+import { ActionFab } from "@/components/action-sheet/ActionSheet";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: async () => {
@@ -17,15 +17,16 @@ export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
-// Nivå 1 — bara det vanligaste.
+// Nivå 1 — bara det vanligaste. "Skapa" sker via FAB, inte via nav.
 const PRIMARY = [
+  { to: "/idag",     label: "Idag",     icon: Sun },
   { to: "/kalender", label: "Kalender", icon: Calendar },
   { to: "/pengar",   label: "Pengar",   icon: Wallet },
-  { to: "/insikter", label: "Insikter", icon: Sparkles },
 ] as const;
 
-// Bakom "Mer" — finns kvar, men skymd från första vyn.
+// Bakom "Mer" — finns kvar för djupgående arbete, men skymd från första vyn.
 const SECONDARY = [
+  { to: "/insikter",  label: "Insikter",    icon: Sparkles },
   { to: "/planering", label: "Planering",   icon: CalendarRange },
   { to: "/jobb",      label: "Jobb & lön",  icon: Briefcase },
   { to: "/dashboard", label: "Översikt",    icon: LayoutDashboard },
@@ -205,8 +206,8 @@ function AppLayout() {
 
       {open && <div onClick={() => setOpen(false)} className="fixed inset-0 z-30 bg-black/40 lg:hidden" />}
 
-      {/* Global + knapp */}
-      <QuickAddFab />
+      {/* Global "Vad vill du göra?"-knapp */}
+      <ActionFab />
     </div>
   );
 }
