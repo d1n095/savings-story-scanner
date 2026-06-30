@@ -1,8 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateShift, DEFAULT_OB_RULES } from "@/modules/salary/ob";
+import { applyBreakRules, normalizeBreakRules, DEFAULT_BREAK_RULES, type BreakRules } from "@/modules/salary/breaks";
+import { NumericField } from "@/components/ui/numeric-field";
 import {
   aggregateRange, aggregateByMonth, isoDate, startOfWeek, endOfWeek,
   startOfMonth, endOfMonth, startOfYear, endOfYear, isoWeekNumber,
@@ -16,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   ChevronLeft, ChevronRight, Calendar as CalIcon, Save, Plus, Trash2,
-  Plane, AlertTriangle, Sparkles, Wand2, Copy, X,
+  Plane, AlertTriangle, Sparkles, Wand2, Copy, X, Settings as SettingsIcon, Briefcase,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/planering")({ component: PlaneringPage });
@@ -55,12 +57,13 @@ function PlaneringPage() {
         supabase.from("work_profiles").select("*").order("is_default", { ascending: false }),
       ]);
       const def = wps?.find((w: any) => w.is_default) ?? wps?.[0];
-      // Föredra default arbetsprofil, annars fallback till profile-värden
       return {
         ...p,
         hourly_rate: def?.hourly_rate ?? p?.hourly_rate ?? 0,
         tax_rate: def?.tax_rate ?? p?.tax_rate ?? 30,
         ob_rules: def?.ob_rules ?? p?.ob_rules,
+        break_rules: normalizeBreakRules(def?.break_rules),
+        work_profile_id: def?.id,
         work_profile_name: def?.name,
       };
     },
@@ -219,8 +222,19 @@ type WeekRow = { date: string; from: string; to: string; break_minutes: number; 
 function WeekFiller({ start, existing, profile, onSaved }: {
   start: Date; existing: ShiftRow[]; profile: any; onSaved: () => void;
 }) {
-  const baseRate = Number(profile?.hourly_rate ?? 0) || 0;
-  const [rate, setRate] = useState<number>(baseRate);
+  const rate = Number(profile?.hourly_rate ?? 0) || 0;
+  const breakRules: BreakRules = profile?.break_rules ?? DEFAULT_BREAK_RULES;
+
+  const defaultBreakFor = (from: string, to: string): number => {
+    const a = new Date(`2000-01-01T${from}:00`);
+    let b = new Date(`2000-01-01T${to}:00`);
+    if (b <= a) b = new Date(b.getTime() + 86400000);
+    const hours = (b.getTime() - a.getTime()) / 3600000;
+    if (breakRules.mode === "auto") return applyBreakRules(breakRules, hours);
+    if (breakRules.mode === "off") return 0;
+    return breakRules.min_break_minutes || 0;
+  };
+
   const [rows, setRows] = useState<WeekRow[]>(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start); d.setDate(start.getDate() + i);
@@ -235,9 +249,21 @@ function WeekFiller({ start, existing, profile, onSaved }: {
           off: false,
         };
       }
-      return { date: key, from: "08:00", to: "16:00", break_minutes: 30, off: true };
+      return { date: key, from: "08:00", to: "16:00", break_minutes: defaultBreakFor("08:00", "16:00"), off: true };
     });
   });
+
+  // Auto-uppdatera rast när tider ändras (om automatisk är vald)
+  const setRowTimes = (i: number, patch: Partial<WeekRow>) => {
+    setRows((prev) => prev.map((x, j) => {
+      if (j !== i) return x;
+      const next = { ...x, ...patch, off: false };
+      if (breakRules.mode === "auto" && (patch.from || patch.to)) {
+        next.break_minutes = defaultBreakFor(next.from, next.to);
+      }
+      return next;
+    }));
+  };
 
   const planned = rows.filter((r) => !r.off);
   const calcs = planned.map((r) => {
@@ -264,22 +290,13 @@ function WeekFiller({ start, existing, profile, onSaved }: {
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Ej inloggad");
-      if (!rate) throw new Error("Ange timlön först");
-      // Radera befintliga pass i veckan för dagar som ska sparas (för att undvika dubbletter)
+      if (!rate) throw new Error("Sätt timlön i Inställningar → Lön & Arbete");
       const datesToReplace = rows.filter((r) => !r.off).map((r) => r.date);
       if (datesToReplace.length) {
-        const dayStart = new Date(`${datesToReplace[0]}T00:00:00`);
-        const lastDay = new Date(`${datesToReplace[datesToReplace.length - 1]}T00:00:00`);
-        const dayEnd = new Date(lastDay.getTime() + 86400000);
-        // Plocka existerande i intervall, filtrera per datum, ta bort dem
-        const existingInRange = existing.filter((s) => {
-          const k = isoDate(new Date(s.starts_at));
-          return datesToReplace.includes(k);
-        });
+        const existingInRange = existing.filter((s) => datesToReplace.includes(isoDate(new Date(s.starts_at))));
         if (existingInRange.length) {
           await supabase.from("shifts").delete().in("id", existingInRange.map((s) => s.id));
         }
-        void dayStart; void dayEnd;
       }
       const inserts = rows.filter((r) => !r.off).map((r, idx) => {
         const startsAt = new Date(`${r.date}T${r.from}:00`);
@@ -296,6 +313,7 @@ function WeekFiller({ start, existing, profile, onSaved }: {
           base_amount: c.baseAmount,
           ob_amount: c.obAmount,
           total_amount: c.totalAmount,
+          work_profile_id: profile?.work_profile_id ?? null,
         };
       });
       if (!inserts.length) return;
@@ -306,6 +324,8 @@ function WeekFiller({ start, existing, profile, onSaved }: {
     onError: (e: any) => toast.error(e.message ?? "Kunde inte spara"),
   });
 
+  const breakModeLabel = breakRules.mode === "auto" ? "Automatisk rast" : breakRules.mode === "off" ? "Ingen rast" : "Manuell rast";
+
   return (
     <div className="glass space-y-4 rounded-2xl p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -313,17 +333,22 @@ function WeekFiller({ start, existing, profile, onSaved }: {
           <Sparkles className="h-4 w-4 text-[oklch(0.85_0.12_85)]" />
           <h2 className="display text-xl">Snabbfyll vecka</h2>
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Timlön</span>
-          <input type="number" value={rate || ""} onChange={(e) => setRate(Number(e.target.value))}
-            className="w-24 rounded-lg border border-border bg-input/40 px-3 py-1.5 text-right" />
-          <span className="text-muted-foreground">kr</span>
-        </label>
+        <Link to="/installningar/lon-arbete"
+          className="group flex items-center gap-2 rounded-full border border-border bg-white/[0.02] px-3 py-1.5 text-xs hover:border-[oklch(0.85_0.12_85/0.4)]">
+          <Briefcase className="h-3.5 w-3.5 text-[oklch(0.85_0.12_85)]" />
+          <span className="font-medium">{profile?.work_profile_name ?? "Ingen arbetsprofil"}</span>
+          <span className="text-muted-foreground">·</span>
+          <span className="tabular-nums">{rate || "–"} kr/h</span>
+          <span className="text-muted-foreground">·</span>
+          <span className="text-muted-foreground">{breakModeLabel}</span>
+          <SettingsIcon className="h-3 w-3 text-muted-foreground transition group-hover:text-foreground" />
+        </Link>
       </div>
 
       <div className="space-y-2">
         {rows.map((r, i) => {
           const d = new Date(`${r.date}T12:00:00`);
+          const breakDisabled = r.off || breakRules.mode === "off";
           return (
             <div key={r.date} className={cn(
               "grid grid-cols-12 items-center gap-2 rounded-xl border border-border bg-background/40 px-3 py-2",
@@ -334,14 +359,19 @@ function WeekFiller({ start, existing, profile, onSaved }: {
                 <div className="text-[10px] text-muted-foreground">{r.date}</div>
               </div>
               <input type="time" value={r.from} disabled={r.off}
-                onChange={(e) => setRows((prev) => prev.map((x, j) => j === i ? { ...x, from: e.target.value, off: false } : x))}
-                className="col-span-3 rounded-lg border border-border bg-input/40 px-2 py-1.5 text-sm" />
+                onChange={(e) => setRowTimes(i, { from: e.target.value })}
+                className="col-span-2 rounded-lg border border-border bg-input/40 px-2 py-1.5 text-sm" />
               <input type="time" value={r.to} disabled={r.off}
-                onChange={(e) => setRows((prev) => prev.map((x, j) => j === i ? { ...x, to: e.target.value, off: false } : x))}
-                className="col-span-3 rounded-lg border border-border bg-input/40 px-2 py-1.5 text-sm" />
-              <input type="number" value={r.break_minutes} disabled={r.off}
-                onChange={(e) => setRows((prev) => prev.map((x, j) => j === i ? { ...x, break_minutes: Number(e.target.value) } : x))}
-                className="col-span-2 rounded-lg border border-border bg-input/40 px-2 py-1.5 text-right text-sm" placeholder="rast" />
+                onChange={(e) => setRowTimes(i, { to: e.target.value })}
+                className="col-span-2 rounded-lg border border-border bg-input/40 px-2 py-1.5 text-sm" />
+              <div className="col-span-4">
+                <NumericField
+                  value={r.break_minutes}
+                  onChange={(v) => setRows((prev) => prev.map((x, j) => j === i ? { ...x, break_minutes: v ?? 0 } : x))}
+                  min={0} max={240} step={5} quickSteps={[5, 15, 30]} showQuick={false} suffix="min rast"
+                  inputClassName={breakDisabled ? "opacity-40" : ""}
+                />
+              </div>
               <button
                 onClick={() => setRows((prev) => prev.map((x, j) => j === i ? { ...x, off: !x.off } : x))}
                 className={cn("col-span-1 rounded-lg border px-2 py-1.5 text-[10px] uppercase tracking-wider",

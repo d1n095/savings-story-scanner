@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_OB_RULES, type OBRule } from "@/modules/salary/ob";
+import { DEFAULT_BREAK_RULES, normalizeBreakRules, type BreakRules } from "@/modules/salary/breaks";
+import { NumericField } from "@/components/ui/numeric-field";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Star, ArrowLeft, Briefcase } from "lucide-react";
+import { Plus, Trash2, Save, Star, ArrowLeft, Briefcase, Coffee } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/installningar/lon-arbete")({ component: LonArbetePage });
@@ -20,6 +22,10 @@ type WorkProfile = {
   vacation_days_per_year: number | null;
   vab_rate: number | null; sick_pay_rate: number | null;
   per_diem: number | null; mileage_rate: number | null; pension_pct: number | null;
+  on_call_rate: number | null; standby_rate: number | null;
+  break_rules: BreakRules | null;
+  max_hours_per_day: number | null; max_hours_per_week: number | null; min_daily_rest_hours: number | null;
+  default_shift_from: string | null; default_shift_to: string | null;
 };
 
 function LonArbetePage() {
@@ -123,10 +129,15 @@ function ProfileEditor({ initial, onSaved }: { initial: WorkProfile; onSaved: ()
         vacation_days_per_year: p.vacation_days_per_year,
         vab_rate: p.vab_rate, sick_pay_rate: p.sick_pay_rate,
         per_diem: p.per_diem, mileage_rate: p.mileage_rate, pension_pct: p.pension_pct,
+        on_call_rate: p.on_call_rate, standby_rate: p.standby_rate,
+        break_rules: normalizeBreakRules(p.break_rules) as any,
+        max_hours_per_day: p.max_hours_per_day, max_hours_per_week: p.max_hours_per_week,
+        min_daily_rest_hours: p.min_daily_rest_hours,
+        default_shift_from: p.default_shift_from, default_shift_to: p.default_shift_to,
       }).eq("id", p.id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Sparat"); onSaved(); },
+    onSuccess: () => { toast.success("Sparat"); onSaved(); qc.invalidateQueries({ queryKey: ["work-profiles"] }); qc.invalidateQueries({ queryKey: ["profile-with-workprofile"] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -167,10 +178,30 @@ function ProfileEditor({ initial, onSaved }: { initial: WorkProfile; onSaved: ()
 
       <Section title="Lön & skatt">
         <Grid>
-          <F label="Timlön (kr)"><input type="number" value={p.hourly_rate ?? 0} onChange={e => setP({ ...p, hourly_rate: +e.target.value })} className={inp()} /></F>
-          <F label="Månadslön (kr, valfritt)"><input type="number" value={p.monthly_salary ?? ""} onChange={e => setP({ ...p, monthly_salary: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="Skattesats (%)"><input type="number" value={p.tax_rate ?? 30} onChange={e => setP({ ...p, tax_rate: +e.target.value })} className={inp()} /></F>
-          <F label="Semesterdagar/år"><input type="number" value={p.vacation_days_per_year ?? 25} onChange={e => setP({ ...p, vacation_days_per_year: +e.target.value })} className={inp()} /></F>
+          <F label="Timlön (kr/h)">
+            <NumericField value={p.hourly_rate} onChange={(v) => setP({ ...p, hourly_rate: v })} min={0} step={1} quickSteps={[1, 5, 10]} suffix="kr" />
+          </F>
+          <F label="Månadslön (kr, valfritt)">
+            <NumericField value={p.monthly_salary} onChange={(v) => setP({ ...p, monthly_salary: v })} min={0} step={100} quickSteps={[100, 500, 1000]} suffix="kr" />
+          </F>
+          <F label="Skattesats (%)">
+            <NumericField value={p.tax_rate} onChange={(v) => setP({ ...p, tax_rate: v })} min={0} max={70} step={1} quickSteps={[1, 5]} suffix="%" />
+          </F>
+          <F label="Semesterdagar/år">
+            <NumericField value={p.vacation_days_per_year} onChange={(v) => setP({ ...p, vacation_days_per_year: v })} min={0} max={60} step={1} quickSteps={[1, 5]} showQuick={false} suffix="dgr" />
+          </F>
+        </Grid>
+      </Section>
+
+      <BreakRulesSection rules={normalizeBreakRules(p.break_rules)} onChange={(r) => setP({ ...p, break_rules: r })} />
+
+      <Section title="Arbetstid">
+        <Grid>
+          <F label="Standardpass från"><input type="time" value={p.default_shift_from ?? ""} onChange={e => setP({ ...p, default_shift_from: e.target.value || null })} className={inp()} /></F>
+          <F label="Standardpass till"><input type="time" value={p.default_shift_to ?? ""} onChange={e => setP({ ...p, default_shift_to: e.target.value || null })} className={inp()} /></F>
+          <F label="Max timmar/dag"><NumericField value={p.max_hours_per_day} onChange={(v) => setP({ ...p, max_hours_per_day: v })} min={0} max={24} step={1} quickSteps={[1]} showQuick={false} suffix="h" /></F>
+          <F label="Max timmar/vecka"><NumericField value={p.max_hours_per_week} onChange={(v) => setP({ ...p, max_hours_per_week: v })} min={0} max={168} step={1} quickSteps={[1, 5]} showQuick={false} suffix="h" /></F>
+          <F label="Minsta dygnsvila"><NumericField value={p.min_daily_rest_hours} onChange={(v) => setP({ ...p, min_daily_rest_hours: v })} min={0} max={24} step={1} quickSteps={[1]} showQuick={false} suffix="h" /></F>
         </Grid>
       </Section>
 
@@ -193,7 +224,9 @@ function ProfileEditor({ initial, onSaved }: { initial: WorkProfile; onSaved: ()
                       <option value="amount">kr/h</option><option value="percent">%</option>
                     </select>
                   </F></div>
-                  <div className="sm:col-span-2"><F label="Värde"><input type="number" value={r.value} onChange={e => setRules(rules.map(x => x.id === r.id ? { ...x, value: +e.target.value } : x))} className={inp()} /></F></div>
+                  <div className="sm:col-span-2"><F label="Värde">
+                    <NumericField value={r.value} onChange={(v) => setRules(rules.map(x => x.id === r.id ? { ...x, value: v ?? 0 } : x))} min={0} step={1} showQuick={false} />
+                  </F></div>
                   <div className="flex items-end sm:col-span-1">
                     <button type="button" onClick={() => setRules(rules.filter(x => x.id !== r.id))} className="ml-auto grid h-9 w-9 place-items-center rounded-lg hover:bg-[oklch(0.65_0.12_28/0.1)] hover:text-[oklch(0.7_0.12_28)]"><Trash2 className="h-4 w-4" /></button>
                   </div>
@@ -217,11 +250,13 @@ function ProfileEditor({ initial, onSaved }: { initial: WorkProfile; onSaved: ()
 
       <Section title="Ersättningar (valfritt)">
         <Grid>
-          <F label="Sjuklön (kr/h)"><input type="number" value={p.sick_pay_rate ?? ""} onChange={e => setP({ ...p, sick_pay_rate: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="VAB (kr/h)"><input type="number" value={p.vab_rate ?? ""} onChange={e => setP({ ...p, vab_rate: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="Traktamente (kr/dag)"><input type="number" value={p.per_diem ?? ""} onChange={e => setP({ ...p, per_diem: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="Milersättning (kr/mil)"><input type="number" value={p.mileage_rate ?? ""} onChange={e => setP({ ...p, mileage_rate: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
-          <F label="Tjänstepension (%)"><input type="number" value={p.pension_pct ?? ""} onChange={e => setP({ ...p, pension_pct: e.target.value === "" ? null : +e.target.value })} className={inp()} /></F>
+          <F label="Sjuklön (kr/h)"><NumericField value={p.sick_pay_rate} onChange={(v) => setP({ ...p, sick_pay_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="VAB (kr/h)"><NumericField value={p.vab_rate} onChange={(v) => setP({ ...p, vab_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="Jour (kr/h)"><NumericField value={p.on_call_rate} onChange={(v) => setP({ ...p, on_call_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="Beredskap (kr/h)"><NumericField value={p.standby_rate} onChange={(v) => setP({ ...p, standby_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="Traktamente (kr/dag)"><NumericField value={p.per_diem} onChange={(v) => setP({ ...p, per_diem: v })} min={0} step={10} showQuick={false} suffix="kr" /></F>
+          <F label="Milersättning (kr/mil)"><NumericField value={p.mileage_rate} onChange={(v) => setP({ ...p, mileage_rate: v })} min={0} step={1} showQuick={false} suffix="kr" /></F>
+          <F label="Tjänstepension (%)"><NumericField value={p.pension_pct} onChange={(v) => setP({ ...p, pension_pct: v })} min={0} max={50} step={0.5} showQuick={false} suffix="%" /></F>
         </Grid>
       </Section>
 
@@ -258,3 +293,76 @@ function F({ label, children }: { label: string; children: React.ReactNode }) {
   return <label className="block"><span className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">{label}</span>{children}</label>;
 }
 function inp() { return "w-full rounded-lg border border-border bg-input/40 px-3 py-2 text-sm outline-none focus:border-[oklch(0.85_0.12_85/0.5)]"; }
+
+function BreakRulesSection({ rules, onChange }: { rules: BreakRules; onChange: (r: BreakRules) => void }) {
+  const setMode = (mode: BreakRules["mode"]) => {
+    if (mode === "auto" && rules.auto.length === 0) {
+      onChange({ ...rules, mode, auto: DEFAULT_BREAK_RULES.auto });
+    } else {
+      onChange({ ...rules, mode });
+    }
+  };
+  const addRow = () => onChange({ ...rules, auto: [...rules.auto, { after_hours: 6, minutes: 30 }] });
+  const updRow = (i: number, patch: Partial<{ after_hours: number; minutes: number }>) =>
+    onChange({ ...rules, auto: rules.auto.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
+  const delRow = (i: number) => onChange({ ...rules, auto: rules.auto.filter((_, j) => j !== i) });
+
+  const modes: Array<{ id: BreakRules["mode"]; label: string; desc: string }> = [
+    { id: "off", label: "Av", desc: "Ingen rast räknas av automatiskt" },
+    { id: "manual", label: "Manuell", desc: "Du anger rast på varje pass" },
+    { id: "auto", label: "Automatisk", desc: "Räkna av efter dina trösklar" },
+  ];
+
+  return (
+    <Section title="Rastregler" extra={<Coffee className="h-4 w-4 text-[oklch(0.85_0.12_85)]" />}>
+      <div className="mb-3 grid gap-2 sm:grid-cols-3">
+        {modes.map(m => (
+          <button key={m.id} type="button" onClick={() => setMode(m.id)}
+            className={cn(
+              "rounded-2xl border p-3 text-left transition",
+              rules.mode === m.id
+                ? "border-[oklch(0.85_0.12_85/0.5)] bg-[oklch(0.85_0.12_85/0.08)]"
+                : "border-border hover:border-[oklch(0.85_0.12_85/0.3)]",
+            )}>
+            <div className="text-sm font-medium">{m.label}</div>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">{m.desc}</div>
+          </button>
+        ))}
+      </div>
+
+      {rules.mode === "auto" && (
+        <div className="space-y-2">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Trösklar (gäller den högsta som passet uppfyller)</div>
+          {rules.auto.length === 0 && <p className="text-sm text-muted-foreground">Inga trösklar. Lägg till en nedan.</p>}
+          {rules.auto.map((r, i) => (
+            <div key={i} className="grid grid-cols-12 items-end gap-2 rounded-xl border border-border bg-white/[0.02] p-3">
+              <div className="col-span-5 sm:col-span-5"><F label="Efter (timmar)">
+                <NumericField value={r.after_hours} onChange={(v) => updRow(i, { after_hours: v ?? 0 })} min={0} max={24} step={0.5} showQuick={false} suffix="h" />
+              </F></div>
+              <div className="col-span-5 sm:col-span-5"><F label="Rast">
+                <NumericField value={r.minutes} onChange={(v) => updRow(i, { minutes: v ?? 0 })} min={0} max={240} step={5} quickSteps={[5, 15, 30]} suffix="min" />
+              </F></div>
+              <div className="col-span-2 flex justify-end">
+                <button type="button" onClick={() => delRow(i)} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-[oklch(0.65_0.12_28/0.1)] hover:text-[oklch(0.7_0.12_28)]">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+          <button type="button" onClick={addRow}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs hover:bg-white/[0.05]">
+            <Plus className="h-3 w-3" /> Lägg till tröskel
+          </button>
+        </div>
+      )}
+
+      {rules.mode === "manual" && (
+        <div className="rounded-xl border border-border bg-white/[0.02] p-3">
+          <F label="Minsta tillåtna rast (kr inget krav = 0)">
+            <NumericField value={rules.min_break_minutes} onChange={(v) => onChange({ ...rules, min_break_minutes: v ?? 0 })} min={0} max={240} step={5} quickSteps={[5, 15, 30]} suffix="min" />
+          </F>
+        </div>
+      )}
+    </Section>
+  );
+}
