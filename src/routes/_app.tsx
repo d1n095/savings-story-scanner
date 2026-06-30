@@ -14,9 +14,9 @@ export const Route = createFileRoute("/_app")({
 });
 
 const NAV = [
-  { to: "/dashboard", label: "Översikt", icon: LayoutDashboard },
   { to: "/kalender", label: "Kalender", icon: Calendar },
   { to: "/planering", label: "Planering", icon: CalendarRange },
+  { to: "/dashboard", label: "Översikt", icon: LayoutDashboard },
   { to: "/jobb", label: "Jobb & lön", icon: Briefcase },
   { to: "/pengar", label: "Pengar", icon: Wallet },
   { to: "/insikter", label: "Insikter", icon: Sparkles },
