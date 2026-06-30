@@ -281,11 +281,15 @@ function ShiftEngine({
       if (error) throw error;
 
       const tl = (inserted ?? []).map((s: any, i: number) => ({
+        user_id: user.id,
         kind: "shift" as const,
-        user_id: user.id, kind: "shift", title: s.title || "Arbetspass",
+        title: s.title || "Arbetspass",
         subtitle: `${rows[i].calc.hours.toFixed(1)}h · ${sek(Number(s.total_amount))}`,
-        occurs_at: s.starts_at, ends_at: s.ends_at,
-        amount: Number(s.total_amount), source_table: "shifts", source_id: s.id,
+        occurs_at: s.starts_at,
+        ends_at: s.ends_at,
+        amount: Number(s.total_amount),
+        source_table: "shifts",
+        source_id: s.id,
         metadata: { breakdown: rows[i].calc.breakdown },
       }));
       if (tl.length) await supabase.from("timeline_events").insert(tl);
