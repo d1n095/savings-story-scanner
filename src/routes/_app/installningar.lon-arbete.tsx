@@ -129,10 +129,15 @@ function ProfileEditor({ initial, onSaved }: { initial: WorkProfile; onSaved: ()
         vacation_days_per_year: p.vacation_days_per_year,
         vab_rate: p.vab_rate, sick_pay_rate: p.sick_pay_rate,
         per_diem: p.per_diem, mileage_rate: p.mileage_rate, pension_pct: p.pension_pct,
+        on_call_rate: p.on_call_rate, standby_rate: p.standby_rate,
+        break_rules: normalizeBreakRules(p.break_rules) as any,
+        max_hours_per_day: p.max_hours_per_day, max_hours_per_week: p.max_hours_per_week,
+        min_daily_rest_hours: p.min_daily_rest_hours,
+        default_shift_from: p.default_shift_from, default_shift_to: p.default_shift_to,
       }).eq("id", p.id);
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Sparat"); onSaved(); },
+    onSuccess: () => { toast.success("Sparat"); onSaved(); qc.invalidateQueries({ queryKey: ["work-profiles"] }); qc.invalidateQueries({ queryKey: ["profile-with-workprofile"] }); },
     onError: (e: any) => toast.error(e.message),
   });
 
