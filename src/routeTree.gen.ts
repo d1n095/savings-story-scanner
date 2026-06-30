@@ -21,6 +21,7 @@ import { Route as AppPlaneringRouteImport } from './routes/_app/planering'
 import { Route as AppPengarRouteImport } from './routes/_app/pengar'
 import { Route as AppKalenderRouteImport } from './routes/_app/kalender'
 import { Route as AppJobbRouteImport } from './routes/_app/jobb'
+import { Route as AppInstallningarRouteImport } from './routes/_app/installningar'
 import { Route as AppInsikterRouteImport } from './routes/_app/insikter'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppInstallningarIndexRouteImport } from './routes/_app/installningar.index'
@@ -86,6 +87,11 @@ const AppJobbRoute = AppJobbRouteImport.update({
   path: '/jobb',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInstallningarRoute = AppInstallningarRouteImport.update({
+  id: '/installningar',
+  path: '/installningar',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppInsikterRoute = AppInsikterRouteImport.update({
   id: '/insikter',
   path: '/insikter',
@@ -97,21 +103,21 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppInstallningarIndexRoute = AppInstallningarIndexRouteImport.update({
-  id: '/installningar/',
-  path: '/installningar/',
-  getParentRoute: () => AppRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppInstallningarRoute,
 } as any)
 const AppInstallningarProfilOchReglerRoute =
   AppInstallningarProfilOchReglerRouteImport.update({
-    id: '/installningar/profil-och-regler',
-    path: '/installningar/profil-och-regler',
-    getParentRoute: () => AppRoute,
+    id: '/profil-och-regler',
+    path: '/profil-och-regler',
+    getParentRoute: () => AppInstallningarRoute,
   } as any)
 const AppInstallningarLonArbeteRoute =
   AppInstallningarLonArbeteRouteImport.update({
-    id: '/installningar/lon-arbete',
-    path: '/installningar/lon-arbete',
-    getParentRoute: () => AppRoute,
+    id: '/lon-arbete',
+    path: '/lon-arbete',
+    getParentRoute: () => AppInstallningarRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/insikter': typeof AppInsikterRoute
+  '/installningar': typeof AppInstallningarRouteWithChildren
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
   '/pengar': typeof AppPengarRoute
@@ -157,6 +164,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/insikter': typeof AppInsikterRoute
+  '/_app/installningar': typeof AppInstallningarRouteWithChildren
   '/_app/jobb': typeof AppJobbRoute
   '/_app/kalender': typeof AppKalenderRoute
   '/_app/pengar': typeof AppPengarRoute
@@ -177,6 +185,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/insikter'
+    | '/installningar'
     | '/jobb'
     | '/kalender'
     | '/pengar'
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/dashboard'
     | '/_app/insikter'
+    | '/_app/installningar'
     | '/_app/jobb'
     | '/_app/kalender'
     | '/_app/pengar'
@@ -325,6 +335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJobbRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/installningar': {
+      id: '/_app/installningar'
+      path: '/installningar'
+      fullPath: '/installningar'
+      preLoaderRoute: typeof AppInstallningarRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/insikter': {
       id: '/_app/insikter'
       path: '/insikter'
@@ -341,50 +358,61 @@ declare module '@tanstack/react-router' {
     }
     '/_app/installningar/': {
       id: '/_app/installningar/'
-      path: '/installningar'
+      path: '/'
       fullPath: '/installningar/'
       preLoaderRoute: typeof AppInstallningarIndexRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppInstallningarRoute
     }
     '/_app/installningar/profil-och-regler': {
       id: '/_app/installningar/profil-och-regler'
-      path: '/installningar/profil-och-regler'
+      path: '/profil-och-regler'
       fullPath: '/installningar/profil-och-regler'
       preLoaderRoute: typeof AppInstallningarProfilOchReglerRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppInstallningarRoute
     }
     '/_app/installningar/lon-arbete': {
       id: '/_app/installningar/lon-arbete'
-      path: '/installningar/lon-arbete'
+      path: '/lon-arbete'
       fullPath: '/installningar/lon-arbete'
       preLoaderRoute: typeof AppInstallningarLonArbeteRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppInstallningarRoute
     }
   }
 }
 
-interface AppRouteChildren {
-  AppDashboardRoute: typeof AppDashboardRoute
-  AppInsikterRoute: typeof AppInsikterRoute
-  AppJobbRoute: typeof AppJobbRoute
-  AppKalenderRoute: typeof AppKalenderRoute
-  AppPengarRoute: typeof AppPengarRoute
-  AppPlaneringRoute: typeof AppPlaneringRoute
+interface AppInstallningarRouteChildren {
   AppInstallningarLonArbeteRoute: typeof AppInstallningarLonArbeteRoute
   AppInstallningarProfilOchReglerRoute: typeof AppInstallningarProfilOchReglerRoute
   AppInstallningarIndexRoute: typeof AppInstallningarIndexRoute
 }
 
+const AppInstallningarRouteChildren: AppInstallningarRouteChildren = {
+  AppInstallningarLonArbeteRoute: AppInstallningarLonArbeteRoute,
+  AppInstallningarProfilOchReglerRoute: AppInstallningarProfilOchReglerRoute,
+  AppInstallningarIndexRoute: AppInstallningarIndexRoute,
+}
+
+const AppInstallningarRouteWithChildren =
+  AppInstallningarRoute._addFileChildren(AppInstallningarRouteChildren)
+
+interface AppRouteChildren {
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppInsikterRoute: typeof AppInsikterRoute
+  AppInstallningarRoute: typeof AppInstallningarRouteWithChildren
+  AppJobbRoute: typeof AppJobbRoute
+  AppKalenderRoute: typeof AppKalenderRoute
+  AppPengarRoute: typeof AppPengarRoute
+  AppPlaneringRoute: typeof AppPlaneringRoute
+}
+
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppInsikterRoute: AppInsikterRoute,
+  AppInstallningarRoute: AppInstallningarRouteWithChildren,
   AppJobbRoute: AppJobbRoute,
   AppKalenderRoute: AppKalenderRoute,
   AppPengarRoute: AppPengarRoute,
   AppPlaneringRoute: AppPlaneringRoute,
-  AppInstallningarLonArbeteRoute: AppInstallningarLonArbeteRoute,
-  AppInstallningarProfilOchReglerRoute: AppInstallningarProfilOchReglerRoute,
-  AppInstallningarIndexRoute: AppInstallningarIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
