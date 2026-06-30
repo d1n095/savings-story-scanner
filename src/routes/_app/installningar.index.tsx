@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { User, Briefcase, Bell, Sliders, ChevronRight, ShieldCheck } from "lucide-react";
 
-export const Route = createFileRoute("/_app/installningar")({ component: SettingsHub });
+export const Route = createFileRoute("/_app/installningar/")({ component: SettingsHub });
 
 const CARDS = [
   {
