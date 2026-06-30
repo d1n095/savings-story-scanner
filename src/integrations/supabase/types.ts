@@ -294,6 +294,7 @@ export type Database = {
           total_amount: number | null
           updated_at: string
           user_id: string
+          work_profile_id: string | null
         }
         Insert: {
           base_amount?: number | null
@@ -310,6 +311,7 @@ export type Database = {
           total_amount?: number | null
           updated_at?: string
           user_id: string
+          work_profile_id?: string | null
         }
         Update: {
           base_amount?: number | null
@@ -326,8 +328,17 @@ export type Database = {
           total_amount?: number | null
           updated_at?: string
           user_id?: string
+          work_profile_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shifts_work_profile_id_fkey"
+            columns: ["work_profile_id"]
+            isOneToOne: false
+            referencedRelation: "work_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       signals: {
         Row: {
@@ -559,6 +570,84 @@ export type Database = {
           name?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      work_profiles: {
+        Row: {
+          bonus_rules: Json | null
+          collective_agreement: string | null
+          commission_rules: Json | null
+          created_at: string
+          employer: string | null
+          hourly_rate: number | null
+          id: string
+          is_default: boolean
+          mileage_rate: number | null
+          monthly_salary: number | null
+          name: string
+          ob_rules: Json | null
+          occupation: string | null
+          overtime_rules: Json | null
+          pension_pct: number | null
+          per_diem: number | null
+          sick_pay_rate: number | null
+          tax_rate: number | null
+          updated_at: string
+          user_id: string
+          vab_rate: number | null
+          vacation_days_per_year: number | null
+          workplace: string | null
+        }
+        Insert: {
+          bonus_rules?: Json | null
+          collective_agreement?: string | null
+          commission_rules?: Json | null
+          created_at?: string
+          employer?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_default?: boolean
+          mileage_rate?: number | null
+          monthly_salary?: number | null
+          name?: string
+          ob_rules?: Json | null
+          occupation?: string | null
+          overtime_rules?: Json | null
+          pension_pct?: number | null
+          per_diem?: number | null
+          sick_pay_rate?: number | null
+          tax_rate?: number | null
+          updated_at?: string
+          user_id: string
+          vab_rate?: number | null
+          vacation_days_per_year?: number | null
+          workplace?: string | null
+        }
+        Update: {
+          bonus_rules?: Json | null
+          collective_agreement?: string | null
+          commission_rules?: Json | null
+          created_at?: string
+          employer?: string | null
+          hourly_rate?: number | null
+          id?: string
+          is_default?: boolean
+          mileage_rate?: number | null
+          monthly_salary?: number | null
+          name?: string
+          ob_rules?: Json | null
+          occupation?: string | null
+          overtime_rules?: Json | null
+          pension_pct?: number | null
+          per_diem?: number | null
+          sick_pay_rate?: number | null
+          tax_rate?: number | null
+          updated_at?: string
+          user_id?: string
+          vab_rate?: number | null
+          vacation_days_per_year?: number | null
+          workplace?: string | null
         }
         Relationships: []
       }
