@@ -4,13 +4,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateShift, DEFAULT_OB_RULES, type OBRule } from "@/modules/salary/ob";
 import { sek, sekPrecise, sweDate, sweTime } from "@/lib/format";
-import { Plus, Trash2, Clock, Calculator } from "lucide-react";
+import { Plus, Trash2, Clock, Calculator, X, Repeat, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/jobb")({ component: JobbPage });
 
 function todayStr(offsetDays = 0) {
   const d = new Date(); d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+
+function addDaysStr(s: string, days: number) {
+  const d = new Date(`${s}T00:00:00`); d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
@@ -61,7 +66,7 @@ function JobbPage() {
         <div>
           <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Jobb & lön</div>
           <h1 className="display text-4xl">Ditt schema</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Lägg in pass — vi räknar OB, rast och netto åt dig.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Lägg in ett eller flera pass — vi räknar OB, rast och netto åt dig.</p>
         </div>
         <button onClick={() => setShowForm(v => !v)} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[oklch(0.88_0.1_85)] to-[oklch(0.7_0.12_75)] px-5 py-2.5 text-sm font-semibold text-background shadow-[0_10px_30px_-10px_oklch(0.78_0.105_85/0.5)]">
           <Plus className="h-4 w-4" /> Nytt pass
@@ -79,7 +84,8 @@ function JobbPage() {
         <ShiftForm
           defaultRate={Number(profile.data?.hourly_rate ?? 0)}
           obRules={(profile.data?.ob_rules as OBRule[] | null)?.length ? (profile.data!.ob_rules as OBRule[]) : DEFAULT_OB_RULES}
-          onSaved={() => { setShowForm(false); qc.invalidateQueries({ queryKey: ["shifts"] }); }}
+          onSavedAll={() => { setShowForm(false); qc.invalidateQueries({ queryKey: ["shifts"] }); }}
+          onSavedKeepOpen={() => { qc.invalidateQueries({ queryKey: ["shifts"] }); }}
         />
       )}
 
@@ -128,9 +134,18 @@ function Stat({ label, value, sub, accent }: { label: string; value: string; sub
   );
 }
 
-function ShiftForm({ defaultRate, obRules, onSaved }: { defaultRate: number; obRules: OBRule[]; onSaved: () => void }) {
+const WEEKDAYS = [
+  { i: 1, label: "Mån" }, { i: 2, label: "Tis" }, { i: 3, label: "Ons" },
+  { i: 4, label: "Tor" }, { i: 5, label: "Fre" }, { i: 6, label: "Lör" }, { i: 0, label: "Sön" },
+];
+
+function ShiftForm({ defaultRate, obRules, onSavedAll, onSavedKeepOpen }: {
+  defaultRate: number; obRules: OBRule[];
+  onSavedAll: () => void; onSavedKeepOpen: () => void;
+}) {
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState(todayStr());
+  const [dates, setDates] = useState<string[]>([todayStr()]);
+  const [newDate, setNewDate] = useState(todayStr(1));
   const [from, setFrom] = useState("08:00");
   const [to, setTo] = useState("16:00");
   const [breakMin, setBreakMin] = useState(30);
@@ -138,86 +153,213 @@ function ShiftForm({ defaultRate, obRules, onSaved }: { defaultRate: number; obR
   const [isExtra, setIsExtra] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const preview = useMemo(() => {
+  // Veckomönster
+  const [patternOpen, setPatternOpen] = useState(false);
+  const [patternDays, setPatternDays] = useState<number[]>([]);
+  const [patternStart, setPatternStart] = useState(todayStr());
+  const [patternWeeks, setPatternWeeks] = useState(2);
+
+  function addDate(d: string) {
+    if (!d) return;
+    setDates(prev => prev.includes(d) ? prev : [...prev, d].sort());
+  }
+  function removeDate(d: string) {
+    setDates(prev => prev.filter(x => x !== d));
+  }
+  function applyPattern() {
+    if (patternDays.length === 0) { toast.error("Välj minst en veckodag"); return; }
+    const out: string[] = [];
+    for (let w = 0; w < patternWeeks; w++) {
+      for (let day = 0; day < 7; day++) {
+        const ds = addDaysStr(patternStart, w * 7 + day);
+        const wd = new Date(`${ds}T00:00:00`).getDay();
+        if (patternDays.includes(wd)) out.push(ds);
+      }
+    }
+    setDates(prev => Array.from(new Set([...prev, ...out])).sort());
+    setPatternOpen(false);
+    toast.success(`${out.length} datum tillagda`);
+  }
+
+  const previewOne = useMemo(() => {
+    if (dates.length === 0) return null;
     try {
-      const startsAt = new Date(`${date}T${from}:00`);
-      let endsAt = new Date(`${date}T${to}:00`);
-      if (endsAt <= startsAt) endsAt = new Date(endsAt.getTime() + 86400000); // över midnatt
+      const startsAt = new Date(`${dates[0]}T${from}:00`);
+      let endsAt = new Date(`${dates[0]}T${to}:00`);
+      if (endsAt <= startsAt) endsAt = new Date(endsAt.getTime() + 86400000);
       return calculateShift({ startsAt, endsAt, breakMinutes: breakMin, hourlyRate: rate, obRules });
     } catch { return null; }
-  }, [date, from, to, breakMin, rate, obRules]);
+  }, [dates, from, to, breakMin, rate, obRules]);
 
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
+  // Summering per datum (varierar pga helg/röd dag/natt)
+  const previewAll = useMemo(() => {
+    let total = 0, ob = 0, hours = 0;
+    const perDate: Array<{ date: string; total: number; ob: number }> = [];
+    for (const d of dates) {
+      try {
+        const startsAt = new Date(`${d}T${from}:00`);
+        let endsAt = new Date(`${d}T${to}:00`);
+        if (endsAt <= startsAt) endsAt = new Date(endsAt.getTime() + 86400000);
+        const c = calculateShift({ startsAt, endsAt, breakMinutes: breakMin, hourlyRate: rate, obRules });
+        total += c.totalAmount; ob += c.obAmount; hours += c.hours;
+        perDate.push({ date: d, total: c.totalAmount, ob: c.obAmount });
+      } catch {}
+    }
+    return { total, ob, hours, perDate };
+  }, [dates, from, to, breakMin, rate, obRules]);
+
+  async function saveAll(closeAfter: boolean) {
+    if (dates.length === 0) { toast.error("Lägg till minst ett datum"); return; }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Inte inloggad");
-      const startsAt = new Date(`${date}T${from}:00`);
-      let endsAt = new Date(`${date}T${to}:00`);
-      if (endsAt <= startsAt) endsAt = new Date(endsAt.getTime() + 86400000);
-      const calc = calculateShift({ startsAt, endsAt, breakMinutes: breakMin, hourlyRate: rate, obRules });
-      const { data: shift, error } = await supabase.from("shifts").insert({
-        user_id: user.id, title: title || null, starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString(),
-        break_minutes: breakMin, hourly_rate: rate, base_amount: calc.baseAmount, ob_amount: calc.obAmount, total_amount: calc.totalAmount, is_extra: isExtra,
-      }).select().single();
+
+      const shiftRows: any[] = [];
+      const timelineRows: any[] = [];
+
+      for (const d of dates) {
+        const startsAt = new Date(`${d}T${from}:00`);
+        let endsAt = new Date(`${d}T${to}:00`);
+        if (endsAt <= startsAt) endsAt = new Date(endsAt.getTime() + 86400000);
+        const calc = calculateShift({ startsAt, endsAt, breakMinutes: breakMin, hourlyRate: rate, obRules });
+        shiftRows.push({
+          user_id: user.id, title: title || null,
+          starts_at: startsAt.toISOString(), ends_at: endsAt.toISOString(),
+          break_minutes: breakMin, hourly_rate: rate,
+          base_amount: calc.baseAmount, ob_amount: calc.obAmount, total_amount: calc.totalAmount,
+          is_extra: isExtra,
+        });
+      }
+
+      const { data: inserted, error } = await supabase.from("shifts").insert(shiftRows).select();
       if (error) throw error;
-      // Skriv till timeline
-      await supabase.from("timeline_events").insert({
-        user_id: user.id, kind: "shift", title: title || "Arbetspass",
-        subtitle: `${calc.hours.toFixed(1)}h · ${sek(calc.totalAmount)}`,
-        occurs_at: startsAt.toISOString(), ends_at: endsAt.toISOString(),
-        amount: calc.totalAmount, source_table: "shifts", source_id: shift.id,
-        metadata: { breakdown: calc.breakdown },
-      });
-      toast.success("Pass sparat");
-      onSaved();
+
+      for (const s of inserted ?? []) {
+        const startsAt = new Date(s.starts_at); const endsAt = new Date(s.ends_at);
+        const calc = calculateShift({ startsAt, endsAt, breakMinutes: s.break_minutes, hourlyRate: Number(s.hourly_rate), obRules });
+        timelineRows.push({
+          user_id: user.id, kind: "shift", title: s.title || "Arbetspass",
+          subtitle: `${calc.hours.toFixed(1)}h · ${sek(Number(s.total_amount))}`,
+          occurs_at: s.starts_at, ends_at: s.ends_at,
+          amount: Number(s.total_amount), source_table: "shifts", source_id: s.id,
+          metadata: { breakdown: calc.breakdown },
+        });
+      }
+      if (timelineRows.length) await supabase.from("timeline_events").insert(timelineRows);
+
+      toast.success(`${shiftRows.length} pass sparade`);
+      if (closeAfter) {
+        onSavedAll();
+      } else {
+        // Reset för snabb inmatning, behåll tider/lön
+        const last = dates[dates.length - 1];
+        setDates([addDaysStr(last, 1)]);
+        setNewDate(addDaysStr(last, 2));
+        setTitle("");
+        onSavedKeepOpen();
+      }
     } catch (err: any) {
       toast.error(err.message);
     } finally { setSaving(false); }
   }
 
   return (
-    <form onSubmit={save} className="glass rounded-3xl p-6">
+    <form onSubmit={(e) => { e.preventDefault(); saveAll(true); }} className="glass rounded-3xl p-6">
       <div className="mb-5 flex items-center gap-2">
         <Calculator className="h-5 w-5 text-[oklch(0.85_0.12_85)]" />
-        <h2 className="display text-xl">Nytt pass</h2>
+        <h2 className="display text-xl">Nya pass</h2>
+        <span className="ml-2 rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{dates.length} datum</span>
       </div>
+
+      {/* Datum-chips */}
+      <div className="mb-5">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Datum</span>
+          <button type="button" onClick={() => setPatternOpen(v => !v)} className="inline-flex items-center gap-1 text-xs text-[oklch(0.85_0.12_85)] hover:underline">
+            <Repeat className="h-3.5 w-3.5" /> Veckomönster
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-1.5 rounded-xl border border-border bg-white/[0.02] p-2">
+          {dates.map(d => (
+            <span key={d} className="inline-flex items-center gap-1 rounded-full bg-[oklch(0.78_0.105_85/0.12)] px-2.5 py-1 text-xs text-[oklch(0.92_0.08_85)]">
+              {sweDate(d)}
+              <button type="button" onClick={() => removeDate(d)} className="grid h-4 w-4 place-items-center rounded-full hover:bg-white/[0.08]"><X className="h-3 w-3" /></button>
+            </span>
+          ))}
+          <div className="ml-auto flex items-center gap-1">
+            <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="rounded-lg border border-border bg-transparent px-2 py-1 text-xs" />
+            <button type="button" onClick={() => { addDate(newDate); setNewDate(addDaysStr(newDate, 1)); }} className="grid h-7 w-7 place-items-center rounded-lg bg-[oklch(0.78_0.105_85/0.2)] text-[oklch(0.92_0.08_85)] hover:bg-[oklch(0.78_0.105_85/0.3)]"><Plus className="h-3.5 w-3.5" /></button>
+          </div>
+        </div>
+
+        {patternOpen && (
+          <div className="mt-2 rounded-xl border border-border bg-white/[0.02] p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <CalendarDays className="h-3.5 w-3.5" /> Lägg till samma pass på flera veckodagar
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {WEEKDAYS.map(w => {
+                const on = patternDays.includes(w.i);
+                return (
+                  <button key={w.i} type="button"
+                    onClick={() => setPatternDays(prev => on ? prev.filter(x => x !== w.i) : [...prev, w.i])}
+                    className={`rounded-full px-3 py-1 text-xs ${on ? "bg-[oklch(0.78_0.105_85)] text-background" : "border border-border text-muted-foreground hover:text-foreground"}`}>
+                    {w.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <label className="block">
+                <span className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">Från</span>
+                <input type="date" value={patternStart} onChange={e => setPatternStart(e.target.value)} className="inp" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">Antal veckor</span>
+                <input type="number" min={1} max={26} value={patternWeeks} onChange={e => setPatternWeeks(+e.target.value)} className="inp" />
+              </label>
+              <div className="flex items-end">
+                <button type="button" onClick={applyPattern} className="w-full rounded-lg bg-[oklch(0.78_0.105_85)] px-3 py-2 text-xs font-semibold text-background">Lägg till datum</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Titel (valfri)"><input value={title} onChange={e => setTitle(e.target.value)} className="inp" placeholder="t.ex. Kvällspass" /></Field>
-        <Field label="Datum"><input type="date" value={date} onChange={e => setDate(e.target.value)} className="inp" /></Field>
+        <Field label="Titel (valfri, gäller alla)"><input value={title} onChange={e => setTitle(e.target.value)} className="inp" placeholder="t.ex. Kvällspass" /></Field>
         <Field label="Timlön (kr)"><input type="number" min={0} value={rate} onChange={e => setRate(+e.target.value)} className="inp" /></Field>
+        <Field label="Rast (min)"><input type="number" min={0} value={breakMin} onChange={e => setBreakMin(+e.target.value)} className="inp" /></Field>
         <Field label="Från"><input type="time" value={from} onChange={e => setFrom(e.target.value)} className="inp" /></Field>
         <Field label="Till"><input type="time" value={to} onChange={e => setTo(e.target.value)} className="inp" /></Field>
-        <Field label="Rast (min)"><input type="number" min={0} value={breakMin} onChange={e => setBreakMin(+e.target.value)} className="inp" /></Field>
+        <label className="flex items-end gap-2 text-sm">
+          <input type="checkbox" checked={isExtra} onChange={e => setIsExtra(e.target.checked)} className="h-4 w-4 accent-[oklch(0.78_0.105_85)]" />
+          Extrapass
+        </label>
       </div>
-      <label className="mt-4 flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={isExtra} onChange={e => setIsExtra(e.target.checked)} className="h-4 w-4 accent-[oklch(0.78_0.105_85)]" />
-        Extrapass (utanför ordinarie schema)
-      </label>
 
-      {preview && (
+      {previewOne && dates.length > 0 && (
         <div className="mt-5 rounded-2xl border border-[oklch(0.78_0.105_85/0.25)] bg-[oklch(0.78_0.105_85/0.05)] p-5">
-          <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Förhandsberäkning</div>
-          <div className="mt-2 grid gap-3 sm:grid-cols-4">
-            <div><div className="text-xs text-muted-foreground">Timmar</div><div className="num text-xl">{preview.hours.toFixed(2)}</div></div>
-            <div><div className="text-xs text-muted-foreground">Grund</div><div className="num text-xl">{sekPrecise(preview.baseAmount)}</div></div>
-            <div><div className="text-xs text-muted-foreground">OB</div><div className="num text-xl text-[oklch(0.85_0.12_85)]">{sekPrecise(preview.obAmount)}</div></div>
-            <div><div className="text-xs text-muted-foreground">Totalt</div><div className="num gold-text text-2xl">{sekPrecise(preview.totalAmount)}</div></div>
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Totalt över {dates.length} pass</div>
+            <div className="text-[10px] text-muted-foreground">OB varierar per dag (helg/röd/natt)</div>
           </div>
-          {preview.breakdown.length > 0 && (
-            <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-              {preview.breakdown.map((b, i) => (
-                <li key={i}>· {b.rule}: {(b.minutes/60).toFixed(2)}h → +{sekPrecise(b.amount)}</li>
-              ))}
-            </ul>
-          )}
+          <div className="mt-2 grid gap-3 sm:grid-cols-4">
+            <div><div className="text-xs text-muted-foreground">Timmar</div><div className="num text-xl">{previewAll.hours.toFixed(1)}</div></div>
+            <div><div className="text-xs text-muted-foreground">Grund/pass</div><div className="num text-xl">{sekPrecise(previewOne.baseAmount)}</div></div>
+            <div><div className="text-xs text-muted-foreground">OB totalt</div><div className="num text-xl text-[oklch(0.85_0.12_85)]">{sekPrecise(previewAll.ob)}</div></div>
+            <div><div className="text-xs text-muted-foreground">Totalt</div><div className="num gold-text text-2xl">{sekPrecise(previewAll.total)}</div></div>
+          </div>
         </div>
       )}
 
-      <div className="mt-5 flex justify-end gap-2">
-        <button disabled={saving} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-          {saving ? "Sparar..." : "Spara pass"}
+      <div className="mt-5 flex flex-wrap justify-end gap-2">
+        <button type="button" disabled={saving || dates.length === 0} onClick={() => saveAll(false)} className="rounded-full border border-[oklch(0.78_0.105_85/0.4)] px-5 py-2 text-sm font-semibold text-[oklch(0.92_0.08_85)] hover:bg-[oklch(0.78_0.105_85/0.1)] disabled:opacity-50">
+          Spara & lägg till nytt
+        </button>
+        <button type="submit" disabled={saving || dates.length === 0} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+          {saving ? "Sparar..." : `Spara ${dates.length} pass`}
         </button>
       </div>
 
