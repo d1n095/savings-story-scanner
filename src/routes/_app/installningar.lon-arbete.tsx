@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_OB_RULES, type OBRule } from "@/modules/salary/ob";
+import { DEFAULT_BREAK_RULES, normalizeBreakRules, type BreakRules } from "@/modules/salary/breaks";
+import { NumericField } from "@/components/ui/numeric-field";
 import { toast } from "sonner";
-import { Plus, Trash2, Save, Star, ArrowLeft, Briefcase } from "lucide-react";
+import { Plus, Trash2, Save, Star, ArrowLeft, Briefcase, Coffee } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/installningar/lon-arbete")({ component: LonArbetePage });
@@ -20,6 +22,10 @@ type WorkProfile = {
   vacation_days_per_year: number | null;
   vab_rate: number | null; sick_pay_rate: number | null;
   per_diem: number | null; mileage_rate: number | null; pension_pct: number | null;
+  on_call_rate: number | null; standby_rate: number | null;
+  break_rules: BreakRules | null;
+  max_hours_per_day: number | null; max_hours_per_week: number | null; min_daily_rest_hours: number | null;
+  default_shift_from: string | null; default_shift_to: string | null;
 };
 
 function LonArbetePage() {
