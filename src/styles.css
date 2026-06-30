@@ -166,3 +166,14 @@
   background-size: 200% 100%;
   animation: shimmer 2.5s linear infinite;
 }
+
+.number-input-no-spinner::-webkit-outer-spin-button,
+.number-input-no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.number-input-no-spinner {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
