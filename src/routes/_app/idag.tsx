@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { sek } from "@/lib/format";
 import { Briefcase, Wallet, Bell, Plus, Calendar as CalendarIcon } from "lucide-react";
 import { ActionSheet } from "@/components/action-sheet/ActionSheet";
+import { QuickActionsBar } from "@/components/quick-actions-bar";
 
 export const Route = createFileRoute("/_app/idag")({ component: TodayPage });
 
