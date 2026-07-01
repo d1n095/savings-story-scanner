@@ -8,7 +8,6 @@ type QA = { key: string; label: string; icon: LucideIcon };
 const DEFAULT_ACTIONS: QA[] = [
   { key: "shift",    label: "Pass",       icon: Briefcase },
   { key: "vacation", label: "Semester",   icon: Plane },
-  { key: "oncall",   label: "Jour",       icon: Phone },
   { key: "expense",  label: "Utgift",     icon: Wallet },
   { key: "reminder", label: "Påminnelse", icon: Bell },
 ];
