@@ -63,6 +63,10 @@ function TodayPage() {
         <h1 className="display mt-1 text-3xl">Idag</h1>
       </header>
 
+      <QuickActionsBar defaultDate={todayIso} />
+
+
+
       {!hasAnything && (
         <div className="rounded-3xl border border-border bg-white/[0.02] p-8 text-center">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[oklch(0.85_0.12_85/0.12)] text-[oklch(0.85_0.12_85)]">
