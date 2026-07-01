@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Briefcase, Plane, Phone, Wallet, Bell, Plus, type LucideIcon } from "lucide-react";
+import { Briefcase, Plane, Wallet, Bell, Plus, type LucideIcon } from "lucide-react";
 import { ActionSheet } from "@/components/action-sheet/ActionSheet";
 import { cn } from "@/lib/utils";
 
