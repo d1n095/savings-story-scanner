@@ -20,20 +20,28 @@ type Step =
 const CATEGORIES = Object.entries(CATEGORY_META) as Array<[ActionCategory, typeof CATEGORY_META[ActionCategory]]>;
 
 export function ActionSheet({
-  open, onOpenChange, defaultDate,
+  open, onOpenChange, defaultDate, initialActionKey,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   defaultDate?: string;
+  initialActionKey?: string;
 }) {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>({ kind: "root" });
   const [query, setQuery] = useState("");
 
-  // Reset on close
+  // Reset on close; hoppa till specifik flow om initialActionKey satt
   useEffect(() => {
-    if (!open) { setStep({ kind: "root" }); setQuery(""); }
-  }, [open]);
+    if (!open) { setStep({ kind: "root" }); setQuery(""); return; }
+    if (initialActionKey) {
+      const a = ACTIONS.find((x) => x.key === initialActionKey);
+      if (a) {
+        const hasInline = ["shift", "expense", "reminder", "vacation", "sick", "vab", "leave"].includes(a.key);
+        if (hasInline) { setStep({ kind: "flow", action: a }); return; }
+      }
+    }
+  }, [open, initialActionKey]);
 
   function handleAction(action: Action) {
     // Har egen inline-flow?
