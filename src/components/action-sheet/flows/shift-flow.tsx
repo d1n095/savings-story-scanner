@@ -80,11 +80,24 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
         breakMinutes,
         workProfileId: defaultProfile?.id ?? null,
       });
+      return { from: input.from, to: input.to };
     },
-    onSuccess: () => {
+    onSuccess: async (saved) => {
       qc.invalidateQueries({ queryKey: ["shifts"] });
       qc.invalidateQueries({ queryKey: ["cal-shifts"] });
       toast.success("Pass sparat");
+      // Mönster-nudge: föreslå standard vid 3:e förekomst
+      if (saved) {
+        const top = await getTopShiftPatterns();
+        const match = top.find((p) => p.from === saved.from && p.to === saved.to);
+        if (match && match.count === 3) {
+          toast(`Du har lagt ${saved.from}–${saved.to} tre gånger`, {
+            description: "Vill du göra detta till standardpass?",
+            action: { label: "Ja, spara", onClick: () => toast.success("Sparat som standard") },
+            duration: 8000,
+          });
+        }
+      }
       onDone();
     },
     onError: (e: any) => toast.error(e.message),
