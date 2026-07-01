@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { sek } from "@/lib/format";
 import { Briefcase, Wallet, Bell, Plus, Calendar as CalendarIcon } from "lucide-react";
 import { ActionSheet } from "@/components/action-sheet/ActionSheet";
+import { QuickActionsBar } from "@/components/quick-actions-bar";
 
 export const Route = createFileRoute("/_app/idag")({ component: TodayPage });
 
@@ -61,6 +62,10 @@ function TodayPage() {
         </div>
         <h1 className="display mt-1 text-3xl">Idag</h1>
       </header>
+
+      <QuickActionsBar defaultDate={todayIso} />
+
+
 
       {!hasAnything && (
         <div className="rounded-3xl border border-border bg-white/[0.02] p-8 text-center">

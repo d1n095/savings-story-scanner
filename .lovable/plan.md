@@ -1,111 +1,106 @@
-# Action-First Architecture — "Vad vill du göra?"
+# Total förenkling av Lön & Arbete
 
-Vi slutar bygga moduler. Vi bygger handlingar. Användaren ser aldrig "Planering vs Jobb vs Kalender" — bara verb.
+Målet: användaren är igång på under 2 minuter. Ingen skrollning. Inga formulär. Kort och snabbval.
 
-## 1. Universal Action Sheet (hjärtat)
+## 1. Onboarding-guide (3 steg)
 
-En enda komponent: `<ActionSheet />` — öppnas från:
-- Stora **+** (FAB) — global
-- Tomma states ("Inga pass än → +")
-- Snabbtryck på dag i kalendern
-- `/` på desktop
+Ny komponent `src/components/onboarding/SalaryWizard.tsx`:
+- Steg 1: **Vad jobbar du som?** (fritext, t.ex. "Undersköterska")
+- Steg 2: **Vad heter arbetsplatsen?** (fritext, t.ex. "Securitas")
+- Steg 3: **Timlön eller månadslön?** → belopp
+- Klart. Skapar `work_profiles`-raden med smarta standarder (rast auto 30 min efter 5 h, tom OB, standardprofil = ja).
 
-Steg 1 — **Vad vill du göra?** (sökbar lista, ikon + verb):
+Triggas första gången användaren öppnar `/installningar/lon-arbete` utan aktiv arbetsprofil, eller via en tydlig **"Kom igång"**-knapp om det finns profil men den är tom.
+
+## 2. Timlön — bort med stepper
+
+Uppdatera `NumericField` så `showQuick` default = `false`. På Lön & Arbete: bara ett rent fält, `143 kr/timme`. Skriv, markera, klistra in, decimaler. Ingenting annat.
+
+## 3. OB som val, inte regler
+
+Ersätt "OB-regler"-sektionen med **Ersättningar**-kort:
+- Rad av chips: `Kväll` `Natt` `Helg` `Röd dag` `Jour` `Beredskap` + `+`
+- Klick på chip → bottom sheet: **belopp (kr/h eller %)** → Klar
+- Automatiska tider (Kväll 18–22, Natt 22–06, Helg lör 00–sön 24, etc.) sätts internt
+- Visas som kort: `Kväll · 25 kr/h` — tryck för att ändra/ta bort
+- "Avancerat"-knapp längst ner öppnar den gamla regelbyggaren för power users
+
+## 4. Raster på vanlig svenska
+
+Ny `BreaksCard.tsx`:
+- Rubrik: **Raster**
+- 2 radio: `Jag lägger rast själv` / `Automatisk`
+- Om Automatisk: lista av regler, varje som mening: *"30 minuters rast efter 5 timmars arbete."*
+- `+ Lägg till ytterligare regel` → inline två numeriska fält (timmar, minuter)
+- Auto-spara. Ingen Spara-knapp.
+
+## 5. Startsida "Idag" alltid först
+
+I `_app.tsx` finns redan `/idag`. Säkerställ att **🏠 Idag** är första flik i sidebar OCH i mobil-topbar, alltid synlig.
+
+## 6. Kortbaserad Lön & Arbete-sida
+
+Bygg om `installningar.lon-arbete.tsx` till en stack av kort:
+
 ```
-💼  Jobba          → Pass, Jour, Beredskap, Semester, Sjuk, VAB, Övertid, Byt, Importera, Kopiera vecka
-💰  Pengar         → Utgift, Inkomst, Räkning, Abonnemang, Sparmål, Budget, Lån, Skuld
-📅  Planera        → Semester, Resa, Påminnelse, Födelsedag, Namnsdag, Mål, Anteckning
-🏃  Hälsa          → Vikt, Träning, Mat, Vatten, Sömn, Promenad
-📄  Dokument       → Scanna, Importera, Kvitto, Garanti, Försäkring, Kontrakt
-```
-
-Steg 2 — **Smart mini-flow** per handling. Ingen full form. Bara det som krävs.
-Exempel "Lägg pass":
-```
-Vilket pass?
-[ Dagpass 07–16 ]  ← din standard, ett tryck = klart
-[ Kvällspass ]
-[ Eget tid ]
-```
-→ Toast "Pass sparat • Tryck för detaljer"
-
-## 2. Smart Defaults Engine
-
-Ny tabell `user_defaults` (key/value/confidence). Skrivs av:
-- `learnFromShift()` — kör efter varje sparat pass
-- Detekterar: vanligaste starttid, sluttid, rast, arbetsprofil, dag-mönster
-
-Läses av Action Sheet för att förfylla. Top-förslag = standard-knapp.
-
-## 3. Pattern Detection (passiv AI, deterministisk)
-
-Bakgrundsjobb (klientside efter mutation):
-- 3 likadana pass → toast "Vill du göra detta till standard?"
-- Måndag-fredag i 2 veckor → "Skapa återkommande mall?"
-- Samma utgift 2 månader i rad → "Lägg som abonnemang?"
-
-Lagras i `signals` (finns redan). Visas som mjuk banner, aldrig modal.
-
-## 4. Navigation kollapsar
-
-Före: Kalender, Pengar, Insikter, Mer (Planering/Jobb/Dashboard/Inställningar)
-Efter:
-- **Idag** (default landing — dagens pass, utgifter, påminnelser)
-- **Kalender** (vyer för pass/ekonomi/planering på samma yta)
-- **Pengar** (översikt utgifter/inkomst)
-- **Du** (profil + inställningar + arbetsprofiler)
-
-Allt skapande sker via **+**, inte via navigation. Planering, Jobb och Dashboard som egna sidor försvinner som destinationer.
-
-## 5. Kontextuell yta
-
-Varje sida visar bara aktuell kontext. Inställningar visas aldrig inline — länk "⚙ Justera" öppnar relevant sektion i sheet.
-
-## 6. Tekniskt
-
-**Nya filer:**
-- `src/components/action-sheet/` — `ActionSheet.tsx`, `actions.ts` (registry), `flows/` (en fil per verb: `add-shift.tsx`, `add-expense.tsx`, …)
-- `src/lib/defaults.ts` — read/write `user_defaults`
-- `src/lib/pattern-detector.ts` — kör efter mutationer
-- `src/routes/_app/idag.tsx` — ny landing
-
-**Migration:**
-```sql
-create table public.user_defaults (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  key text not null,
-  value jsonb not null,
-  confidence int not null default 1,
-  updated_at timestamptz default now(),
-  unique(user_id, key)
-);
--- + GRANT + RLS (auth.uid() = user_id)
+Arbetsprofil: Securitas ▾
+──────────────
+Timlön              143 kr/h  →
+──────────────
+Ersättningar        3 aktiva  →
+  Kväll 25 · Natt 45 · Helg 40
+──────────────
+Raster              30 min efter 5 h  →
+──────────────
+Semester            25 dagar  →
+──────────────
+[ Visa avancerat ▾ ]
 ```
 
-**Ersätter:** `quick-add-sheet.tsx` (gamla FAB), gör om till tunn wrapper runt `ActionSheet`.
+Varje kort → bottom sheet med detaljer. Max 5–6 kort synliga. Skatt, pension, provision, etc. bakom "Visa avancerat".
 
-**Behåller:** Befintliga routes som destinationer för djupgående redigering — men användaren navigerar dit via klick på objekt, inte via meny.
+## 7. Auto-spara överallt
 
-## 7. Leverans i 3 vågor
+Ta bort explicit `Spara`-knappar där det går. Debounced save (500 ms) på alla numeriska fält och toggles. Toast "Sparat" diskret.
 
-**Våg 1 (denna runda):**
-- `user_defaults` tabell
-- `ActionSheet` skelett + registry
-- 4 flows klara: Pass, Utgift, Semester, Påminnelse
-- Ny `/idag` + uppdaterad sidebar
-- Defaults engine för pass
+## 8. Smarta standarder (befintligt `user_defaults`)
 
-**Våg 2:**
-- Resterande Jobba-flows (Jour, Beredskap, Sjuk, VAB, Övertid, Byt, Importera, Kopiera vecka)
-- Pengar-flows komplett
-- Pattern detection live
+Redan på plats för pass. Utöka:
+- `break.pattern` — om samma rast använts 3 ggr → föreslå auto-regel via toast med "Använd alltid" knapp
+- `shift.pattern` — om samma pass 3 ggr → toast "Gör till standardpass?"
+- Vid pass-skapande, om bara en `work_profiles`-rad är default = förvälj utan att fråga (redan så)
 
-**Våg 3:**
-- Hälsa + Dokument-flows (kräver nya tabeller — bekräftas innan)
-- Smart förslag-bannrar
-- `/` keyboard launcher
+Implementera pattern-detektion i `src/lib/patterns.ts` som körs efter shift/break-save.
 
----
+## 9. Snabbåtgärder högst upp
 
-**Bekräfta så kör jag Våg 1 direkt.** Vill du ändra något i verb-listan, eller lägga till/ta bort handlingar innan jag börjar?
+På `/idag`, `/kalender`, `/pengar`, `/installningar/lon-arbete`: en horisontell rad med chip-knappar högst upp:
+`+ Pass` `+ Semester` `+ Jour` `+ Utgift` `+ Påminnelse` — öppnar respektive ActionSheet-flow direkt.
+
+## 10. Filer som ändras / skapas
+
+**Nya:**
+- `src/components/onboarding/SalaryWizard.tsx`
+- `src/components/settings/HourlyRateCard.tsx`
+- `src/components/settings/CompensationsCard.tsx` (chips + sheet)
+- `src/components/settings/BreaksCard.tsx`
+- `src/components/settings/VacationCard.tsx`
+- `src/components/quick-actions-bar.tsx`
+- `src/lib/patterns.ts` (mönster-detektion)
+
+**Ändras:**
+- `src/components/ui/numeric-field.tsx` — `showQuick` default false
+- `src/routes/_app/installningar.lon-arbete.tsx` — kortstack + wizard trigger
+- `src/routes/_app.tsx` — säkerställ 🏠 Idag först i nav
+- `src/routes/_app/idag.tsx`, `kalender.tsx`, `pengar.tsx` — snabbåtgärder-rad
+- `src/components/action-sheet/flows/shift-flow.tsx` — trigga pattern-suggestion efter save
+
+**Ingen DB-migration behövs** — allt återanvänder `work_profiles`, `user_defaults`, `break_rules`.
+
+## 11. Vad som INTE ingår (i denna våg)
+
+- Ombygget av kalender/planering
+- Nya OB-tider utöver de 6 presetsen
+- Multi-profil-växling utöver befintlig dropdown
+
+Säg till om något ska tas bort eller läggas till, annars kör jag hela vågen på en gång.

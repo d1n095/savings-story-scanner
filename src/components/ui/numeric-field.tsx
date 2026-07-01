@@ -16,7 +16,7 @@ export function NumericField({
   placeholder,
   suffix,
   quickSteps,
-  showQuick = true,
+  showQuick = false,
   className,
   inputClassName,
   ariaLabel,
