@@ -38,18 +38,22 @@ export function QuickActionsBar({
       >
         {actions.map((a) => {
           const Icon = a.icon;
-          return (
-            <button
-              key={a.key}
-              type="button"
-              onClick={() => setOpenKey(a.key)}
-              className="group inline-flex shrink-0 snap-start items-center gap-2 rounded-full border border-border bg-white/[0.02] px-4 py-2 text-sm transition hover:border-[oklch(0.78_0.105_85/0.5)] hover:bg-[oklch(0.78_0.105_85/0.08)]"
-            >
+          const inner = (
+            <>
               <span className="grid h-6 w-6 place-items-center rounded-full bg-[oklch(0.85_0.12_85/0.15)] text-[oklch(0.85_0.12_85)]">
                 <Plus className="h-3 w-3" strokeWidth={2.5} />
               </span>
               <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground" />
               <span>{a.label}</span>
+            </>
+          );
+          const cls = "group inline-flex shrink-0 snap-start items-center gap-2 rounded-full border border-border bg-white/[0.02] px-4 py-2 text-sm transition hover:border-[oklch(0.78_0.105_85/0.5)] hover:bg-[oklch(0.78_0.105_85/0.08)]";
+          if (a.to) {
+            return <Link key={a.key} to={a.to} className={cls}>{inner}</Link>;
+          }
+          return (
+            <button key={a.key} type="button" onClick={() => setOpenKey(a.key)} className={cls}>
+              {inner}
             </button>
           );
         })}
