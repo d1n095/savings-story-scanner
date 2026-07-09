@@ -1,15 +1,17 @@
 import { useState } from "react";
-import { Briefcase, Plane, Wallet, Bell, Plus, type LucideIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Briefcase, Upload, Plane, Wallet, Bell, Plus, type LucideIcon } from "lucide-react";
 import { ActionSheet } from "@/components/action-sheet/ActionSheet";
 import { cn } from "@/lib/utils";
 
-type QA = { key: string; label: string; icon: LucideIcon };
+type QA = { key: string; label: string; icon: LucideIcon; to?: string };
 
 const DEFAULT_ACTIONS: QA[] = [
-  { key: "shift",    label: "Pass",       icon: Briefcase },
-  { key: "vacation", label: "Semester",   icon: Plane },
-  { key: "expense",  label: "Utgift",     icon: Wallet },
-  { key: "reminder", label: "Påminnelse", icon: Bell },
+  { key: "shift",    label: "Pass",             icon: Briefcase },
+  { key: "import",   label: "Importera schema", icon: Upload, to: "/importera" },
+  { key: "vacation", label: "Semester",         icon: Plane },
+  { key: "expense",  label: "Utgift",           icon: Wallet },
+  { key: "reminder", label: "Påminnelse",       icon: Bell },
 ];
 
 /**
