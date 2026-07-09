@@ -280,6 +280,7 @@ export type Database = {
       }
       shifts: {
         Row: {
+          active_minutes: number
           base_amount: number | null
           break_minutes: number
           created_at: string
@@ -289,6 +290,8 @@ export type Database = {
           is_extra: boolean | null
           notes: string | null
           ob_amount: number | null
+          on_call_hours: number | null
+          shift_type: Database["public"]["Enums"]["shift_type"]
           starts_at: string
           title: string | null
           total_amount: number | null
@@ -297,6 +300,7 @@ export type Database = {
           work_profile_id: string | null
         }
         Insert: {
+          active_minutes?: number
           base_amount?: number | null
           break_minutes?: number
           created_at?: string
@@ -306,6 +310,8 @@ export type Database = {
           is_extra?: boolean | null
           notes?: string | null
           ob_amount?: number | null
+          on_call_hours?: number | null
+          shift_type?: Database["public"]["Enums"]["shift_type"]
           starts_at: string
           title?: string | null
           total_amount?: number | null
@@ -314,6 +320,7 @@ export type Database = {
           work_profile_id?: string | null
         }
         Update: {
+          active_minutes?: number
           base_amount?: number | null
           break_minutes?: number
           created_at?: string
@@ -323,6 +330,8 @@ export type Database = {
           is_extra?: boolean | null
           notes?: string | null
           ob_amount?: number | null
+          on_call_hours?: number | null
+          shift_type?: Database["public"]["Enums"]["shift_type"]
           starts_at?: string
           title?: string | null
           total_amount?: number | null
@@ -604,6 +613,7 @@ export type Database = {
         Row: {
           bonus_rules: Json | null
           break_rules: Json
+          callout_rate: number | null
           collective_agreement: string | null
           commission_rules: Json | null
           created_at: string
@@ -626,17 +636,20 @@ export type Database = {
           pension_pct: number | null
           per_diem: number | null
           sick_pay_rate: number | null
+          sleeping_on_call_rate: number | null
           standby_rate: number | null
           tax_rate: number | null
           updated_at: string
           user_id: string
           vab_rate: number | null
           vacation_days_per_year: number | null
+          waking_on_call_rate: number | null
           workplace: string | null
         }
         Insert: {
           bonus_rules?: Json | null
           break_rules?: Json
+          callout_rate?: number | null
           collective_agreement?: string | null
           commission_rules?: Json | null
           created_at?: string
@@ -659,17 +672,20 @@ export type Database = {
           pension_pct?: number | null
           per_diem?: number | null
           sick_pay_rate?: number | null
+          sleeping_on_call_rate?: number | null
           standby_rate?: number | null
           tax_rate?: number | null
           updated_at?: string
           user_id: string
           vab_rate?: number | null
           vacation_days_per_year?: number | null
+          waking_on_call_rate?: number | null
           workplace?: string | null
         }
         Update: {
           bonus_rules?: Json | null
           break_rules?: Json
+          callout_rate?: number | null
           collective_agreement?: string | null
           commission_rules?: Json | null
           created_at?: string
@@ -692,12 +708,14 @@ export type Database = {
           pension_pct?: number | null
           per_diem?: number | null
           sick_pay_rate?: number | null
+          sleeping_on_call_rate?: number | null
           standby_rate?: number | null
           tax_rate?: number | null
           updated_at?: string
           user_id?: string
           vab_rate?: number | null
           vacation_days_per_year?: number | null
+          waking_on_call_rate?: number | null
           workplace?: string | null
         }
         Relationships: []
@@ -730,6 +748,7 @@ export type Database = {
         | "sparande"
         | "overforing"
         | "annat"
+      shift_type: "regular" | "waking_on_call" | "sleeping_on_call" | "standby"
       signal_severity: "info" | "warning" | "critical"
       timeline_kind:
         | "shift"
@@ -885,6 +904,7 @@ export const Constants = {
         "overforing",
         "annat",
       ],
+      shift_type: ["regular", "waking_on_call", "sleeping_on_call", "standby"],
       signal_severity: ["info", "warning", "critical"],
       timeline_kind: [
         "shift",

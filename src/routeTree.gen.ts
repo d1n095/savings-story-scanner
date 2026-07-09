@@ -23,6 +23,7 @@ import { Route as AppKalenderRouteImport } from './routes/_app/kalender'
 import { Route as AppJobbRouteImport } from './routes/_app/jobb'
 import { Route as AppInstallningarRouteImport } from './routes/_app/installningar'
 import { Route as AppInsikterRouteImport } from './routes/_app/insikter'
+import { Route as AppImporteraRouteImport } from './routes/_app/importera'
 import { Route as AppIdagRouteImport } from './routes/_app/idag'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppInstallningarIndexRouteImport } from './routes/_app/installningar.index'
@@ -98,6 +99,11 @@ const AppInsikterRoute = AppInsikterRouteImport.update({
   path: '/insikter',
   getParentRoute: () => AppRoute,
 } as any)
+const AppImporteraRoute = AppImporteraRouteImport.update({
+  id: '/importera',
+  path: '/importera',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppIdagRoute = AppIdagRouteImport.update({
   id: '/idag',
   path: '/idag',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/idag': typeof AppIdagRoute
+  '/importera': typeof AppImporteraRoute
   '/insikter': typeof AppInsikterRoute
   '/installningar': typeof AppInstallningarRouteWithChildren
   '/jobb': typeof AppJobbRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/idag': typeof AppIdagRoute
+  '/importera': typeof AppImporteraRoute
   '/insikter': typeof AppInsikterRoute
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/idag': typeof AppIdagRoute
+  '/_app/importera': typeof AppImporteraRoute
   '/_app/insikter': typeof AppInsikterRoute
   '/_app/installningar': typeof AppInstallningarRouteWithChildren
   '/_app/jobb': typeof AppJobbRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/idag'
+    | '/importera'
     | '/insikter'
     | '/installningar'
     | '/jobb'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/idag'
+    | '/importera'
     | '/insikter'
     | '/jobb'
     | '/kalender'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/dashboard'
     | '/_app/idag'
+    | '/_app/importera'
     | '/_app/insikter'
     | '/_app/installningar'
     | '/_app/jobb'
@@ -361,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInsikterRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/importera': {
+      id: '/_app/importera'
+      path: '/importera'
+      fullPath: '/importera'
+      preLoaderRoute: typeof AppImporteraRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/idag': {
       id: '/_app/idag'
       path: '/idag'
@@ -417,6 +436,7 @@ const AppInstallningarRouteWithChildren =
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppIdagRoute: typeof AppIdagRoute
+  AppImporteraRoute: typeof AppImporteraRoute
   AppInsikterRoute: typeof AppInsikterRoute
   AppInstallningarRoute: typeof AppInstallningarRouteWithChildren
   AppJobbRoute: typeof AppJobbRoute
@@ -428,6 +448,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppIdagRoute: AppIdagRoute,
+  AppImporteraRoute: AppImporteraRoute,
   AppInsikterRoute: AppInsikterRoute,
   AppInstallningarRoute: AppInstallningarRouteWithChildren,
   AppJobbRoute: AppJobbRoute,
@@ -451,13 +472,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
