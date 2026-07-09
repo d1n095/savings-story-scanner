@@ -38,7 +38,7 @@ export const ACTIONS: Action[] = [
   { key: "leave",        label: "Ledigt",           category: "jobba", icon: Coffee },
   { key: "overtime",     label: "Övertid",          category: "jobba", icon: Clock },
   { key: "swap",         label: "Byt pass",         category: "jobba", icon: ArrowLeftRight, route: "/jobb" },
-  { key: "import",       label: "Importera schema", category: "jobba", icon: Upload,       route: "/planering" },
+  { key: "import",       label: "Importera schema", category: "jobba", icon: Upload,       route: "/importera" },
   { key: "copyWeek",     label: "Kopiera vecka",    category: "jobba", icon: Copy,         route: "/planering" },
 
   // PENGAR
