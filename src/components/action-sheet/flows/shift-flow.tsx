@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Briefcase, Check } from "lucide-react";
+import { Briefcase, Check, Moon, Phone, Radio, Sun } from "lucide-react";
 import { getDefault, getTopShiftPatterns, learnFromShift } from "@/lib/defaults";
 import { cn } from "@/lib/utils";
 
 type Preset = { label: string; from: string; to: string; badge?: string };
+type ShiftType = "regular" | "waking_on_call" | "sleeping_on_call" | "standby";
 
 const FALLBACK_PRESETS: Preset[] = [
   { label: "Dagpass", from: "07:00", to: "16:00", badge: "07–16" },
@@ -14,14 +15,22 @@ const FALLBACK_PRESETS: Preset[] = [
   { label: "Nattpass", from: "22:00", to: "06:00", badge: "22–06" },
 ];
 
+const TYPE_META: Record<ShiftType, { label: string; icon: typeof Sun; hint: string }> = {
+  regular:          { label: "Vanligt",     icon: Sun,   hint: "Ordinarie arbete" },
+  waking_on_call:   { label: "Vaken jour",  icon: Phone, hint: "Aktiv jour hela passet" },
+  sleeping_on_call: { label: "Sovande jour",icon: Moon,  hint: "Sover på plats, aktiv tid räknas separat" },
+  standby:          { label: "Beredskap",   icon: Radio, hint: "Hemma, kan bli inkallad" },
+};
+
 export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDone: () => void }) {
   const qc = useQueryClient();
   const [date, setDate] = useState(defaultDate ?? new Date().toISOString().slice(0, 10));
   const [presets, setPresets] = useState<Preset[]>(FALLBACK_PRESETS);
   const [custom, setCustom] = useState<{ from: string; to: string } | null>(null);
   const [breakMinutes, setBreakMinutes] = useState(30);
+  const [shiftType, setShiftType] = useState<ShiftType>("regular");
+  const [activeMinutes, setActiveMinutes] = useState(0);
 
-  // Hämta arbetsprofiler + smart defaults
   const profiles = useQuery({
     queryKey: ["wp-active"],
     queryFn: async () => {
@@ -49,7 +58,6 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
         if (!exists) learned.unshift({ label: "Senaste", from: last.from, to: last.to, badge: `${last.from}–${last.to}` });
       }
       const merged = [...learned, ...FALLBACK_PRESETS].slice(0, 4);
-      // dedupe
       const seen = new Set<string>();
       setPresets(merged.filter((p) => {
         const k = `${p.from}-${p.to}`;
@@ -59,21 +67,55 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
     })();
   }, []);
 
+  // Preview av spänn/midnatt för aktuellt tidsval
+  const timePreview = useMemo(() => {
+    const t = custom ?? presets[0];
+    if (!t) return null;
+    const [sh, sm] = t.from.split(":").map(Number);
+    const [eh, em] = t.to.split(":").map(Number);
+    const startsAt = new Date(`${date}T${t.from}:00`);
+    let endsAt = new Date(`${date}T${t.to}:00`);
+    if (endsAt <= startsAt) endsAt = new Date(endsAt.getTime() + 86400000);
+    const spansMidnight = endsAt.getDate() !== startsAt.getDate();
+    const totalH = (endsAt.getTime() - startsAt.getTime()) / 3600000;
+    return { spansMidnight, totalH, endsAt };
+  }, [custom, presets, date]);
+
   const save = useMutation({
     mutationFn: async (input: { from: string; to: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Ej inloggad");
       const startsAt = new Date(`${date}T${input.from}:00`);
       let endsAt = new Date(`${date}T${input.to}:00`);
-      if (endsAt <= startsAt) endsAt = new Date(endsAt.getTime() + 86400000); // nattpass
+      if (endsAt <= startsAt) endsAt = new Date(endsAt.getTime() + 86400000);
+      const totalHours = (endsAt.getTime() - startsAt.getTime()) / 3600000;
+
+      // Välj rätt kr/h beroende på passtyp
+      const p: any = defaultProfile ?? {};
+      let hourlyRate: number | null = p.hourly_rate ?? null;
+      let onCallHours: number | null = null;
+      if (shiftType === "waking_on_call") {
+        hourlyRate = p.waking_on_call_rate ?? p.on_call_rate ?? hourlyRate;
+        onCallHours = totalHours;
+      } else if (shiftType === "sleeping_on_call") {
+        hourlyRate = p.sleeping_on_call_rate ?? p.on_call_rate ?? hourlyRate;
+        onCallHours = totalHours;
+      } else if (shiftType === "standby") {
+        hourlyRate = p.standby_rate ?? hourlyRate;
+        onCallHours = totalHours;
+      }
+
       const { error } = await supabase.from("shifts").insert({
         user_id: user.id,
         work_profile_id: defaultProfile?.id ?? null,
         starts_at: startsAt.toISOString(),
         ends_at: endsAt.toISOString(),
-        break_minutes: breakMinutes,
-        hourly_rate: defaultProfile?.hourly_rate ?? null,
-      });
+        break_minutes: shiftType === "regular" ? breakMinutes : 0,
+        hourly_rate: hourlyRate,
+        shift_type: shiftType,
+        on_call_hours: onCallHours,
+        active_minutes: shiftType === "regular" ? 0 : activeMinutes,
+      } as any);
       if (error) throw error;
       await learnFromShift({
         from: input.from, to: input.to,
@@ -86,7 +128,6 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
       qc.invalidateQueries({ queryKey: ["shifts"] });
       qc.invalidateQueries({ queryKey: ["cal-shifts"] });
       toast.success("Pass sparat");
-      // Mönster-nudge: föreslå standard vid 3:e förekomst
       if (saved) {
         const top = await getTopShiftPatterns();
         const match = top.find((p) => p.from === saved.from && p.to === saved.to);
@@ -103,9 +144,11 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
     onError: (e: any) => toast.error(e.message),
   });
 
+  const showActive = shiftType === "sleeping_on_call" || shiftType === "standby";
+
   return (
     <div className="space-y-5">
-      {/* Datum + profil — minimalt */}
+      {/* Datum + profil */}
       <div className="flex items-center justify-between gap-3 text-sm">
         <input
           type="date" value={date} onChange={(e) => setDate(e.target.value)}
@@ -118,7 +161,36 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
         )}
       </div>
 
-      {/* Pass-mallar = ett tryck = klart */}
+      {/* Passtyp */}
+      <div className="space-y-2">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Passtyp</div>
+        <div className="grid grid-cols-4 gap-1.5">
+          {(Object.keys(TYPE_META) as ShiftType[]).map((t) => {
+            const Meta = TYPE_META[t];
+            const Icon = Meta.icon;
+            const active = shiftType === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setShiftType(t)}
+                className={cn(
+                  "flex flex-col items-center gap-1 rounded-xl border px-2 py-2 text-[10px] transition",
+                  active
+                    ? "border-[oklch(0.78_0.105_85/0.6)] bg-[oklch(0.78_0.105_85/0.1)] text-foreground"
+                    : "border-border bg-white/[0.02] text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="text-center leading-tight">{Meta.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="text-[11px] text-muted-foreground">{TYPE_META[shiftType].hint}</div>
+      </div>
+
+      {/* Pass-mallar */}
       <div className="space-y-2">
         <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Vilket pass?</div>
         <div className="grid grid-cols-2 gap-2">
@@ -142,9 +214,30 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
             </button>
           ))}
         </div>
+        {timePreview?.spansMidnight && (
+          <div className="rounded-lg border border-[oklch(0.78_0.105_85/0.3)] bg-[oklch(0.78_0.105_85/0.06)] px-3 py-2 text-[11px] text-[oklch(0.85_0.12_85)]">
+            → Går över midnatt. Slutar {timePreview.endsAt.toLocaleDateString("sv-SE", { weekday: "short", day: "numeric", month: "short" })} kl {String(timePreview.endsAt.getHours()).padStart(2,"0")}:{String(timePreview.endsAt.getMinutes()).padStart(2,"0")} ({timePreview.totalH.toFixed(1)} h)
+          </div>
+        )}
       </div>
 
-      {/* Egen tid — gömt bakom en länk */}
+      {/* Aktiv tid för sovande jour / beredskap */}
+      {showActive && (
+        <label className="block text-xs text-muted-foreground">
+          Aktiv tid / utryckning (minuter)
+          <input
+            type="number" min={0}
+            value={activeMinutes}
+            onChange={(e) => setActiveMinutes(Math.max(0, Number(e.target.value) || 0))}
+            className="mt-1 w-full rounded-lg border border-border bg-background/50 px-3 py-2 text-sm"
+          />
+          <span className="mt-1 block text-[10px] text-muted-foreground/70">
+            Tid du faktiskt blev inkallad / vaknade och arbetade under passet.
+          </span>
+        </label>
+      )}
+
+      {/* Egen tid */}
       {!custom ? (
         <button
           type="button"
@@ -165,10 +258,12 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
                 className="mt-1 w-full rounded-lg border border-border bg-background/50 px-3 py-2 text-sm" />
             </label>
           </div>
-          <label className="block text-xs text-muted-foreground">Rast (minuter)
-            <input type="number" value={breakMinutes} onChange={(e) => setBreakMinutes(Math.max(0, Number(e.target.value) || 0))}
-              className="mt-1 w-full rounded-lg border border-border bg-background/50 px-3 py-2 text-sm" />
-          </label>
+          {shiftType === "regular" && (
+            <label className="block text-xs text-muted-foreground">Rast (minuter)
+              <input type="number" value={breakMinutes} onChange={(e) => setBreakMinutes(Math.max(0, Number(e.target.value) || 0))}
+                className="mt-1 w-full rounded-lg border border-border bg-background/50 px-3 py-2 text-sm" />
+            </label>
+          )}
           <button
             type="button"
             disabled={save.isPending}
