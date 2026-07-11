@@ -139,13 +139,6 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
       });
       return { from: input.from, to: input.to };
     },
-      await learnFromShift({
-        from: input.from, to: input.to,
-        breakMinutes,
-        workProfileId: defaultProfile?.id ?? null,
-      });
-      return { from: input.from, to: input.to };
-    },
     onSuccess: async (saved) => {
       qc.invalidateQueries({ queryKey: ["shifts"] });
       qc.invalidateQueries({ queryKey: ["cal-shifts"] });
