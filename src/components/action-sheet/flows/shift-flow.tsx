@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Briefcase, Check, Moon, Phone, Radio, Sun } from "lucide-react";
 import { getDefault, getTopShiftPatterns, learnFromShift } from "@/lib/defaults";
+import { computeShiftAmounts } from "@/modules/salary/compute";
 import { cn } from "@/lib/utils";
 
 type Preset = { label: string; from: string; to: string; badge?: string };
