@@ -89,35 +89,56 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
       const startsAt = new Date(`${date}T${input.from}:00`);
       let endsAt = new Date(`${date}T${input.to}:00`);
       if (endsAt <= startsAt) endsAt = new Date(endsAt.getTime() + 86400000);
-      const totalHours = (endsAt.getTime() - startsAt.getTime()) / 3600000;
 
-      // Välj rätt kr/h beroende på passtyp
-      const p: any = defaultProfile ?? {};
-      let hourlyRate: number | null = p.hourly_rate ?? null;
-      let onCallHours: number | null = null;
-      if (shiftType === "waking_on_call") {
-        hourlyRate = p.waking_on_call_rate ?? p.on_call_rate ?? hourlyRate;
-        onCallHours = totalHours;
-      } else if (shiftType === "sleeping_on_call") {
-        hourlyRate = p.sleeping_on_call_rate ?? p.on_call_rate ?? hourlyRate;
-        onCallHours = totalHours;
-      } else if (shiftType === "standby") {
-        hourlyRate = p.standby_rate ?? hourlyRate;
-        onCallHours = totalHours;
+      // Krock-koll mot befintliga pass
+      const winStart = new Date(startsAt.getTime() - 86400000).toISOString();
+      const winEnd = new Date(endsAt.getTime() + 86400000).toISOString();
+      const { data: existing } = await supabase
+        .from("shifts")
+        .select("id, starts_at, ends_at")
+        .gte("starts_at", winStart)
+        .lte("ends_at", winEnd);
+      const clash = (existing ?? []).find((ex: any) => {
+        const es = new Date(ex.starts_at).getTime();
+        const ee = new Date(ex.ends_at).getTime();
+        return es < endsAt.getTime() && ee > startsAt.getTime();
+      });
+      if (clash) {
+        const from = new Date(clash.starts_at);
+        const to = new Date(clash.ends_at);
+        const label = `${from.toLocaleDateString("sv-SE",{day:"numeric",month:"short"})} ${String(from.getHours()).padStart(2,"0")}:${String(from.getMinutes()).padStart(2,"0")}–${String(to.getHours()).padStart(2,"0")}:${String(to.getMinutes()).padStart(2,"0")}`;
+        throw new Error(`Krock med pass ${label} — ta bort det först eller välj annan tid`);
       }
+
+      const p: any = defaultProfile ?? {};
+      const c = computeShiftAmounts({
+        startsAt, endsAt,
+        breakMinutes, shiftType, activeMinutes,
+        profile: p,
+      });
 
       const { error } = await supabase.from("shifts").insert({
         user_id: user.id,
         work_profile_id: defaultProfile?.id ?? null,
         starts_at: startsAt.toISOString(),
         ends_at: endsAt.toISOString(),
-        break_minutes: shiftType === "regular" ? breakMinutes : 0,
-        hourly_rate: hourlyRate,
+        break_minutes: c.break_minutes,
+        hourly_rate: c.hourly_rate || null,
         shift_type: shiftType,
-        on_call_hours: onCallHours,
-        active_minutes: shiftType === "regular" ? 0 : activeMinutes,
+        on_call_hours: c.on_call_hours,
+        active_minutes: c.active_minutes,
+        base_amount: c.base_amount,
+        ob_amount: c.ob_amount,
+        total_amount: c.total_amount,
       } as any);
       if (error) throw error;
+      await learnFromShift({
+        from: input.from, to: input.to,
+        breakMinutes,
+        workProfileId: defaultProfile?.id ?? null,
+      });
+      return { from: input.from, to: input.to };
+    },
       await learnFromShift({
         from: input.from, to: input.to,
         breakMinutes,
