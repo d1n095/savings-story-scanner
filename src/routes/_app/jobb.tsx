@@ -56,6 +56,7 @@ function JobbPage() {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
+        .is("deleted_at", null)
         .order("starts_at", { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -77,7 +78,10 @@ function JobbPage() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("shifts").delete().eq("id", id);
+      const { error } = await supabase
+        .from("shifts")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

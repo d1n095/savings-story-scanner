@@ -97,6 +97,7 @@ function KalenderPage() {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
+        .is("deleted_at", null)
         .gte("starts_at", gridStart.toISOString())
         .lte("starts_at", new Date(gridEnd.getTime() + 86400000).toISOString())
         .order("starts_at");
@@ -394,10 +395,18 @@ function DayPanel({
   async function removeEvent(ev: DayEvent) {
     if (!ev.refTable || !ev.refId) return;
     if (!confirm(`Ta bort "${ev.title}"?`)) return;
-    const { error } = await supabase
-      .from(ev.refTable as any)
-      .delete()
-      .eq("id", ev.refId);
+    let error: any;
+    if (ev.refTable === "shifts") {
+      ({ error } = await supabase
+        .from("shifts")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", ev.refId));
+    } else {
+      ({ error } = await supabase
+        .from(ev.refTable as any)
+        .delete()
+        .eq("id", ev.refId));
+    }
     if (error) return toast.error(error.message);
     toast.success("Borttaget");
     onRefresh();

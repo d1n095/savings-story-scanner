@@ -116,6 +116,7 @@ function PlaneringPage() {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
+        .is("deleted_at", null)
         .gte(
           "starts_at",
           new Date(
@@ -458,7 +459,7 @@ function WeekFiller({
         if (existingInRange.length) {
           await supabase
             .from("shifts")
-            .delete()
+            .update({ deleted_at: new Date().toISOString() })
             .in(
               "id",
               existingInRange.map((s) => s.id),

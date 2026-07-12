@@ -28,6 +28,7 @@ function TodayPage() {
     queryKey: ["today-shifts", todayIso],
     queryFn: async () => {
       const { data } = await supabase.from("shifts").select("*")
+        .is("deleted_at", null)
         .gte("starts_at", startOfDay).lte("starts_at", endOfDay).order("starts_at");
       return data ?? [];
     },

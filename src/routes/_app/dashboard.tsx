@@ -62,6 +62,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
+        .is("deleted_at", null)
         .gte("starts_at", start.toISOString())
         .lt("starts_at", end.toISOString())
         .order("starts_at", { ascending: false });
@@ -92,6 +93,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("shifts")
         .select("*")
+        .is("deleted_at", null)
         .gte("starts_at", new Date().toISOString())
         .order("starts_at", { ascending: true })
         .limit(4);

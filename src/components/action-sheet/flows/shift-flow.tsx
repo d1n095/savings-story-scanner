@@ -96,6 +96,7 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
       const { data: existing } = await supabase
         .from("shifts")
         .select("id, starts_at, ends_at")
+        .is("deleted_at", null)
         .gte("starts_at", winStart)
         .lte("ends_at", winEnd);
       const clash = (existing ?? []).find((ex: any) => {

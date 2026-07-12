@@ -284,6 +284,7 @@ export type Database = {
           base_amount: number | null
           break_minutes: number
           created_at: string
+          deleted_at: string | null
           ends_at: string
           hourly_rate: number | null
           id: string
@@ -304,6 +305,7 @@ export type Database = {
           base_amount?: number | null
           break_minutes?: number
           created_at?: string
+          deleted_at?: string | null
           ends_at: string
           hourly_rate?: number | null
           id?: string
@@ -324,6 +326,7 @@ export type Database = {
           base_amount?: number | null
           break_minutes?: number
           created_at?: string
+          deleted_at?: string | null
           ends_at?: string
           hourly_rate?: number | null
           id?: string

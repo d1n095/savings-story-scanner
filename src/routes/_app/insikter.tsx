@@ -23,7 +23,7 @@ function InsikterPage() {
   const shifts = useQuery({
     queryKey: ["ins-shifts"],
     queryFn: async () =>
-      (await supabase.from("shifts").select("*").gte("starts_at", monthStart())).data ?? [],
+      (await supabase.from("shifts").select("*").is("deleted_at", null).gte("starts_at", monthStart())).data ?? [],
   });
   const expenses = useQuery({
     queryKey: ["ins-exp"],

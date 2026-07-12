@@ -94,6 +94,7 @@ function ImportSchedulePage() {
       const { data: existing } = await supabase
         .from("shifts")
         .select("id, starts_at, ends_at")
+        .is("deleted_at", null)
         .gte("starts_at", minStart.toISOString())
         .lte("ends_at", maxEnd.toISOString());
       if (cancelled) return;
@@ -167,7 +168,10 @@ function ImportSchedulePage() {
       });
 
       if (replaceIds.length > 0) {
-        const { error } = await supabase.from("shifts").delete().in("id", replaceIds);
+        const { error } = await supabase
+          .from("shifts")
+          .update({ deleted_at: new Date().toISOString() })
+          .in("id", replaceIds);
         if (error) throw error;
       }
       if (inserts.length > 0) {
