@@ -41,6 +41,7 @@ type WorkProfile = {
   period_start_day: number;
   payday_day: number;
   payday_offset_months: number;
+  vacation_pay_percent: number;
 };
 
 /* ---------- OB presets ---------- */
@@ -750,6 +751,7 @@ function AdvancedSheet({ open, onOpenChange, profile, onSaved }: {
         period_start_day: p.period_start_day ?? 1,
         payday_day: p.payday_day ?? 25,
         payday_offset_months: p.payday_offset_months ?? 1,
+        vacation_pay_percent: p.vacation_pay_percent ?? 12,
       }).eq("id", profile.id);
       if (error) throw error;
     },
@@ -804,6 +806,7 @@ function AdvancedSheet({ open, onOpenChange, profile, onSaved }: {
           </Row>
           <Row>
             <Num label="Månader efter period" value={p.payday_offset_months ?? 1} onChange={(v) => setP({ ...p, payday_offset_months: Math.min(3, Math.max(0, Math.round(Number(v ?? 1)))) })} min={0} max={3} step={1} suffix="mån" />
+            <Num label="Semesterersättning" value={p.vacation_pay_percent ?? 12} onChange={(v) => setP({ ...p, vacation_pay_percent: Math.min(50, Math.max(0, Number(v ?? 12))) })} min={0} max={50} step={0.1} suffix="%" />
           </Row>
           {periodPreview && (
             <div className="mt-3 rounded-xl bg-white/[0.04] p-3 text-xs text-muted-foreground">

@@ -715,6 +715,7 @@ export type Database = {
           user_id: string
           vab_rate: number | null
           vacation_days_per_year: number | null
+          vacation_pay_percent: number
           waking_on_call_rate: number | null
           workplace: string | null
         }
@@ -754,6 +755,7 @@ export type Database = {
           user_id: string
           vab_rate?: number | null
           vacation_days_per_year?: number | null
+          vacation_pay_percent?: number
           waking_on_call_rate?: number | null
           workplace?: string | null
         }
@@ -793,6 +795,7 @@ export type Database = {
           user_id?: string
           vab_rate?: number | null
           vacation_days_per_year?: number | null
+          vacation_pay_percent?: number
           waking_on_call_rate?: number | null
           workplace?: string | null
         }

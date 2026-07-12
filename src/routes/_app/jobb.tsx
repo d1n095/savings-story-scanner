@@ -107,10 +107,13 @@ function JobbPage() {
     }, 0);
     const base = periodShifts.reduce((s, r: any) => s + Number(r.base_amount || 0), 0);
     const ob = periodShifts.reduce((s, r: any) => s + Number(r.ob_amount || 0), 0);
-    const total = base + ob;
+    const gross = base + ob;
+    const vacationPayPercent = profile.data?.vacationPayPercent ?? 12;
+    const vacationPay = +(gross * vacationPayPercent / 100).toFixed(2);
+    const total = gross + vacationPay;
     const taxRate = Number(profile.data?.taxRate ?? 30) / 100;
     const net = total * (1 - taxRate);
-    return { hours, base, ob, total, net, count: periodShifts.length, period };
+    return { hours, base, ob, gross, vacationPay, vacationPayPercent, total, net, count: periodShifts.length, period };
   }, [shifts.data, profile.data]);
 
   return (
@@ -133,10 +136,11 @@ function JobbPage() {
         </button>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label="Timmar" value={summary.hours.toFixed(1)} sub={`${summary.count} pass · ${summary.period.label}`} />
         <Stat label="Grundlön" value={sek(summary.base)} sub="intjänat denna period" />
         <Stat label="OB-tillägg" value={sek(summary.ob)} accent />
+        <Stat label={`Semestersers. (${summary.vacationPayPercent}%)`} value={sek(summary.vacationPay)} sub="12% på brutto" />
         <Stat
           label="Netto (est.)"
           value={sek(summary.net)}

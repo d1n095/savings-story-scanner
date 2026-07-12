@@ -10,13 +10,14 @@ export type ActiveWorkProfile = {
   periodStartDay: number;
   paydayDay: number;
   paydayOffsetMonths: number;
+  vacationPayPercent: number;
 };
 
 export async function getActiveWorkProfile(): Promise<ActiveWorkProfile | null> {
   const { data, error } = await supabase
     .from("work_profiles")
     .select(
-      "id, name, hourly_rate, tax_rate, ob_rules, is_default, created_at, period_start_day, payday_day, payday_offset_months",
+      "id, name, hourly_rate, tax_rate, ob_rules, is_default, created_at, period_start_day, payday_day, payday_offset_months, vacation_pay_percent",
     )
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: true })
@@ -35,5 +36,6 @@ export async function getActiveWorkProfile(): Promise<ActiveWorkProfile | null> 
     periodStartDay: Number(profile.period_start_day ?? 1),
     paydayDay: Number(profile.payday_day ?? 25),
     paydayOffsetMonths: Number(profile.payday_offset_months ?? 1),
+    vacationPayPercent: Number(profile.vacation_pay_percent ?? 12),
   };
 }
