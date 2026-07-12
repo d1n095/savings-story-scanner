@@ -164,6 +164,9 @@ function ImportSchedulePage() {
           ob_amount: c.ob_amount,
           total_amount: c.total_amount,
           notes: r.note || null,
+          pay_snapshot: c.pay_snapshot,
+          pay_engine_version: c.pay_engine_version,
+          pay_computed_at: c.pay_computed_at,
         });
       });
 

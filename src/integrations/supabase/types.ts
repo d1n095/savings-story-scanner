@@ -348,7 +348,10 @@ export type Database = {
           notes: string | null
           ob_amount: number | null
           on_call_hours: number | null
+          pay_computed_at: string | null
+          pay_engine_version: number
           pay_period_id: string | null
+          pay_snapshot: Json | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           starts_at: string
           title: string | null
@@ -370,7 +373,10 @@ export type Database = {
           notes?: string | null
           ob_amount?: number | null
           on_call_hours?: number | null
+          pay_computed_at?: string | null
+          pay_engine_version?: number
           pay_period_id?: string | null
+          pay_snapshot?: Json | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
           starts_at: string
           title?: string | null
@@ -392,7 +398,10 @@ export type Database = {
           notes?: string | null
           ob_amount?: number | null
           on_call_hours?: number | null
+          pay_computed_at?: string | null
+          pay_engine_version?: number
           pay_period_id?: string | null
+          pay_snapshot?: Json | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
           starts_at?: string
           title?: string | null
@@ -414,6 +423,57 @@ export type Database = {
             columns: ["pay_period_id"]
             isOneToOne: false
             referencedRelation: "pay_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pay_recompute_log: {
+        Row: {
+          id: string
+          new_snapshot: Json | null
+          new_total: number | null
+          old_snapshot: Json | null
+          old_total: number | null
+          reason: string
+          recomputed_at: string
+          shift_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          new_snapshot?: Json | null
+          new_total?: number | null
+          old_snapshot?: Json | null
+          old_total?: number | null
+          reason: string
+          recomputed_at?: string
+          shift_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          new_snapshot?: Json | null
+          new_total?: number | null
+          old_snapshot?: Json | null
+          old_total?: number | null
+          reason?: string
+          recomputed_at?: string
+          shift_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pay_recompute_log_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pay_recompute_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]

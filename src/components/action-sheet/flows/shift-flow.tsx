@@ -131,6 +131,9 @@ export function ShiftFlow({ defaultDate, onDone }: { defaultDate?: string; onDon
         base_amount: c.base_amount,
         ob_amount: c.ob_amount,
         total_amount: c.total_amount,
+        pay_snapshot: c.pay_snapshot as any,
+        pay_engine_version: c.pay_engine_version,
+        pay_computed_at: c.pay_computed_at,
       } as any);
       if (error) throw error;
       await learnFromShift({
