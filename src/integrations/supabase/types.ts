@@ -292,6 +292,87 @@ export type Database = {
         }
         Relationships: []
       }
+      payslips: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          gross_salary: number | null
+          id: string
+          net_salary: number | null
+          ob_amount: number | null
+          ocr_raw: string | null
+          on_call_amount: number | null
+          overtime_amount: number | null
+          pay_period_id: string | null
+          period_end: string
+          period_start: string
+          tax_amount: number | null
+          total_hours: number | null
+          updated_at: string
+          user_id: string
+          vacation_pay: number | null
+          verified_at: string | null
+          work_profile_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          gross_salary?: number | null
+          id?: string
+          net_salary?: number | null
+          ob_amount?: number | null
+          ocr_raw?: string | null
+          on_call_amount?: number | null
+          overtime_amount?: number | null
+          pay_period_id?: string | null
+          period_end: string
+          period_start: string
+          tax_amount?: number | null
+          total_hours?: number | null
+          updated_at?: string
+          user_id: string
+          vacation_pay?: number | null
+          verified_at?: string | null
+          work_profile_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          gross_salary?: number | null
+          id?: string
+          net_salary?: number | null
+          ob_amount?: number | null
+          ocr_raw?: string | null
+          on_call_amount?: number | null
+          overtime_amount?: number | null
+          pay_period_id?: string | null
+          period_end?: string
+          period_start?: string
+          tax_amount?: number | null
+          total_hours?: number | null
+          updated_at?: string
+          user_id?: string
+          vacation_pay?: number | null
+          verified_at?: string | null
+          work_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_work_profile_id_fkey"
+            columns: ["work_profile_id"]
+            isOneToOne: false
+            referencedRelation: "work_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_pay_period_id_fkey"
+            columns: ["pay_period_id"]
+            isOneToOne: false
+            referencedRelation: "pay_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shift_templates: {
         Row: {
           break_minutes: number
