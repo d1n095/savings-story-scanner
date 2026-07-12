@@ -6,6 +6,7 @@ import { calcMoneyScore } from "@/modules/finance/score";
 import { holidaysForYear } from "@/modules/calendar/holidays";
 import { namedaysFor } from "@/modules/calendar/namedays";
 import { getActiveWorkProfile } from "@/lib/active-work-profile";
+import { currentPayPeriod, isInPeriod, formatPayday } from "@/lib/pay-period";
 import {
   Briefcase,
   Wallet,
@@ -108,17 +109,31 @@ function Dashboard() {
     .filter((e: any) => e.is_recurring)
     .reduce((s, r: any) => s + Number(r.amount), 0);
 
+  const period = useMemo(() => {
+    return currentPayPeriod({
+      periodStartDay: activeWorkProfile.data?.periodStartDay ?? 1,
+      paydayDay: activeWorkProfile.data?.paydayDay ?? 25,
+      paydayOffsetMonths: activeWorkProfile.data?.paydayOffsetMonths ?? 1,
+    });
+  }, [activeWorkProfile.data]);
+
+  const periodIncome = useMemo(() => {
+    return (shifts.data ?? [])
+      .filter((s: any) => isInPeriod(period, s.starts_at))
+      .reduce((sum: number, r: any) => sum + Number(r.total_amount ?? 0), 0);
+  }, [shifts.data, period]);
+
   const score = useMemo(
     () =>
       calcMoneyScore({
-        monthlyIncome: monthIncome,
+        monthlyIncome: periodIncome,
         monthlyExpenses: monthSpend,
         recurringSubs,
         bufferMonths: 0,
         daysWithoutImpulse: 0,
         plannedVsActualRatio: 0.5,
       }),
-    [monthIncome, monthSpend, recurringSubs],
+    [periodIncome, monthSpend, recurringSubs],
   );
 
   const today = new Date();
@@ -188,14 +203,15 @@ function Dashboard() {
 
         <div className="glass rounded-3xl p-6">
           <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
-            Denna månad
+            {period.label}
           </div>
           <div className="mt-4 space-y-4">
             <Metric
               icon={<Briefcase className="h-4 w-4" />}
               label="Intjänat"
-              value={sek(monthIncome)}
+              value={sek(periodIncome)}
               accent="gold"
+              sub={`Utbet. ~${formatPayday(period.payday)}`}
             />
             <Metric
               icon={<Wallet className="h-4 w-4" />}
@@ -206,8 +222,8 @@ function Dashboard() {
             <Metric
               icon={<TrendingUp className="h-4 w-4" />}
               label="Netto"
-              value={sek(monthIncome - monthSpend)}
-              accent={monthIncome - monthSpend >= 0 ? "emerald" : "coral"}
+              value={sek(periodIncome - monthSpend)}
+              accent={periodIncome - monthSpend >= 0 ? "emerald" : "coral"}
             />
           </div>
           <Link
@@ -324,11 +340,13 @@ function Metric({
   label,
   value,
   accent,
+  sub,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   accent: "gold" | "coral" | "emerald";
+  sub?: string;
 }) {
   const color =
     accent === "gold"
@@ -342,7 +360,10 @@ function Metric({
         {icon}
         {label}
       </div>
-      <div className={`num text-xl ${color}`}>{value}</div>
+      <div className="text-right">
+        <div className={`num text-xl ${color}`}>{value}</div>
+        {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
+      </div>
     </div>
   );
 }

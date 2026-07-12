@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { cn } from "@/lib/utils";
 import type { OBRule } from "@/modules/salary/ob";
 import { DEFAULT_BREAK_RULES, normalizeBreakRules, type BreakRules } from "@/modules/salary/breaks";
+import { currentPayPeriod, formatPayday } from "@/lib/pay-period";
 
 export const Route = createFileRoute("/_app/installningar/lon-arbete")({ component: LonArbetePage });
 
@@ -37,6 +38,9 @@ type WorkProfile = {
   vab_rate: number | null;
   per_diem: number | null;
   mileage_rate: number | null;
+  period_start_day: number;
+  payday_day: number;
+  payday_offset_months: number;
 };
 
 /* ---------- OB presets ---------- */
@@ -724,6 +728,18 @@ function AdvancedSheet({ open, onOpenChange, profile, onSaved }: {
   const [p, setP] = useState<WorkProfile>(profile);
   useEffect(() => { if (open) setP(profile); }, [open, profile]);
 
+  const periodPreview = useMemo(() => {
+    try {
+      return currentPayPeriod({
+        periodStartDay: p.period_start_day ?? 1,
+        paydayDay: p.payday_day ?? 25,
+        paydayOffsetMonths: p.payday_offset_months ?? 1,
+      });
+    } catch {
+      return null;
+    }
+  }, [p.period_start_day, p.payday_day, p.payday_offset_months]);
+
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("work_profiles").update({
@@ -731,6 +747,9 @@ function AdvancedSheet({ open, onOpenChange, profile, onSaved }: {
         tax_rate: p.tax_rate, pension_pct: p.pension_pct,
         sick_pay_rate: p.sick_pay_rate, vab_rate: p.vab_rate,
         per_diem: p.per_diem, mileage_rate: p.mileage_rate,
+        period_start_day: p.period_start_day ?? 1,
+        payday_day: p.payday_day ?? 25,
+        payday_offset_months: p.payday_offset_months ?? 1,
       }).eq("id", profile.id);
       if (error) throw error;
     },
@@ -776,6 +795,23 @@ function AdvancedSheet({ open, onOpenChange, profile, onSaved }: {
           <Num label="Traktamente (kr/dag)" value={p.per_diem} onChange={(v) => setP({ ...p, per_diem: v })} suffix="kr" />
           <Num label="Milersättning (kr/mil)" value={p.mileage_rate} onChange={(v) => setP({ ...p, mileage_rate: v })} suffix="kr" />
         </Row>
+
+        <div className="rounded-2xl border border-border bg-card/50 p-4">
+          <div className="mb-3 text-[11px] uppercase tracking-wider text-muted-foreground">Löneperiod & utbetalning</div>
+          <Row>
+            <Num label="Period börjar dag" value={p.period_start_day ?? 1} onChange={(v) => setP({ ...p, period_start_day: Math.min(28, Math.max(1, Math.round(Number(v ?? 1)))) })} min={1} max={28} step={1} suffix="" />
+            <Num label="Löneutbetalning dag" value={p.payday_day ?? 25} onChange={(v) => setP({ ...p, payday_day: Math.min(31, Math.max(1, Math.round(Number(v ?? 25)))) })} min={1} max={31} step={1} suffix="" />
+          </Row>
+          <Row>
+            <Num label="Månader efter period" value={p.payday_offset_months ?? 1} onChange={(v) => setP({ ...p, payday_offset_months: Math.min(3, Math.max(0, Math.round(Number(v ?? 1)))) })} min={0} max={3} step={1} suffix="mån" />
+          </Row>
+          {periodPreview && (
+            <div className="mt-3 rounded-xl bg-white/[0.04] p-3 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Aktuell period:</span>{" "}
+              {periodPreview.label} · Utbetalning {formatPayday(periodPreview.payday)}
+            </div>
+          )}
+        </div>
 
         <button onClick={() => save.mutate()} disabled={save.isPending}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[oklch(0.88_0.1_85)] to-[oklch(0.7_0.12_75)] py-3 text-sm font-semibold text-background disabled:opacity-50">
