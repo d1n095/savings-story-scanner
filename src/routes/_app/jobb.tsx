@@ -8,6 +8,7 @@ import { parseQuickCommand, parsePastedSchedule, isoDate } from "@/modules/salar
 import { detectWarnings, daySummaries, type ShiftWarning } from "@/modules/salary/conflicts";
 import { sek, sekPrecise, sweDate, sweTime } from "@/lib/format";
 import { getActiveWorkProfile } from "@/lib/active-work-profile";
+import { currentPayPeriod, isInPeriod, formatPayday } from "@/lib/pay-period";
 import {
   Plus,
   Trash2,
@@ -91,23 +92,25 @@ function JobbPage() {
   });
 
   const summary = useMemo(() => {
-    const now = new Date();
-    const ms = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    const monthShifts = (shifts.data ?? []).filter(
-      (s: any) => new Date(s.starts_at).getTime() >= ms,
-    );
-    const hours = monthShifts.reduce((sum, s: any) => {
+    const periodConfig = {
+      periodStartDay: profile.data?.periodStartDay ?? 1,
+      paydayDay: profile.data?.paydayDay ?? 25,
+      paydayOffsetMonths: profile.data?.paydayOffsetMonths ?? 1,
+    };
+    const period = currentPayPeriod(periodConfig);
+    const periodShifts = (shifts.data ?? []).filter((s: any) => isInPeriod(period, s.starts_at));
+    const hours = periodShifts.reduce((sum, s: any) => {
       const h =
         (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 3600000 -
         (s.break_minutes ?? 0) / 60;
       return sum + h;
     }, 0);
-    const base = monthShifts.reduce((s, r: any) => s + Number(r.base_amount || 0), 0);
-    const ob = monthShifts.reduce((s, r: any) => s + Number(r.ob_amount || 0), 0);
+    const base = periodShifts.reduce((s, r: any) => s + Number(r.base_amount || 0), 0);
+    const ob = periodShifts.reduce((s, r: any) => s + Number(r.ob_amount || 0), 0);
     const total = base + ob;
     const taxRate = Number(profile.data?.taxRate ?? 30) / 100;
     const net = total * (1 - taxRate);
-    return { hours, base, ob, total, net, count: monthShifts.length };
+    return { hours, base, ob, total, net, count: periodShifts.length, period };
   }, [shifts.data, profile.data]);
 
   return (
@@ -131,13 +134,13 @@ function JobbPage() {
       </header>
 
       <section className="grid gap-4 sm:grid-cols-4">
-        <Stat label="Timmar" value={summary.hours.toFixed(1)} sub={`${summary.count} pass`} />
-        <Stat label="Grundlön" value={sek(summary.base)} />
+        <Stat label="Timmar" value={summary.hours.toFixed(1)} sub={`${summary.count} pass · ${summary.period.label}`} />
+        <Stat label="Grundlön" value={sek(summary.base)} sub="intjänat denna period" />
         <Stat label="OB-tillägg" value={sek(summary.ob)} accent />
         <Stat
           label="Netto (est.)"
           value={sek(summary.net)}
-          sub={`Efter ${profile.data?.taxRate ?? 30}% skatt`}
+          sub={`Utbetalning ~${formatPayday(summary.period.payday)}`}
         />
       </section>
 
