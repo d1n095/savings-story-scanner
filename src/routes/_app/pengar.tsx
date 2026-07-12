@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { sek, sweDate } from "@/lib/format";
+import { getActiveWorkProfile } from "@/lib/active-work-profile";
 import { Plus, Trash2, Tag } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,65 +29,101 @@ function PengarPage() {
   const [cat, setCat] = useState("mat");
   const [desc, setDesc] = useState("");
   const [merchant, setMerchant] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0,10));
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [recurring, setRecurring] = useState(false);
 
-  const profile = useQuery({
-    queryKey: ["profile"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data } = await supabase.from("profiles").select("hourly_rate").eq("id", user!.id).maybeSingle();
-      return data;
-    },
+  const activeWorkProfile = useQuery({
+    queryKey: ["active-work-profile"],
+    queryFn: getActiveWorkProfile,
   });
 
   const expenses = useQuery({
     queryKey: ["expenses", "all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("expenses").select("*").order("occurred_at", { ascending: false }).limit(100);
-      if (error) throw error; return data ?? [];
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("*")
+        .order("occurred_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
   const add = useMutation({
     mutationFn: async () => {
       if (!amount || amount <= 0) throw new Error("Ange ett belopp");
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: exp, error } = await supabase.from("expenses").insert({
-        user_id: user!.id, amount: Number(amount), category: cat as any, description: desc || null, merchant: merchant || null,
-        occurred_at: new Date(`${date}T12:00:00`).toISOString(), is_recurring: recurring,
-      }).select().single();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { data: exp, error } = await supabase
+        .from("expenses")
+        .insert({
+          user_id: user!.id,
+          amount: Number(amount),
+          category: cat as any,
+          description: desc || null,
+          merchant: merchant || null,
+          occurred_at: new Date(`${date}T12:00:00`).toISOString(),
+          is_recurring: recurring,
+        })
+        .select()
+        .single();
       if (error) throw error;
       await supabase.from("timeline_events").insert({
-        user_id: user!.id, kind: "expense",
-        title: desc || merchant || CATS.find(c => c.value === cat)?.label || "Utgift",
+        user_id: user!.id,
+        kind: "expense",
+        title: desc || merchant || CATS.find((c) => c.value === cat)?.label || "Utgift",
         subtitle: merchant || null,
-        occurs_at: exp.occurred_at, amount: -Number(amount), source_table: "expenses", source_id: exp.id,
+        occurs_at: exp.occurred_at,
+        amount: -Number(amount),
+        source_table: "expenses",
+        source_id: exp.id,
       });
     },
     onSuccess: () => {
       toast.success("Utgift sparad");
       qc.invalidateQueries({ queryKey: ["expenses"] });
-      setAmount(""); setDesc(""); setMerchant(""); setRecurring(false); setOpen(false);
+      setAmount("");
+      setDesc("");
+      setMerchant("");
+      setRecurring(false);
+      setOpen(false);
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const del = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("expenses").delete().eq("id", id); if (error) throw error; },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["expenses"] }); toast.success("Borttagen"); },
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("expenses").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      toast.success("Borttagen");
+    },
   });
 
   const summary = useMemo(() => {
-    const now = new Date(); const ms = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const now = new Date();
+    const ms = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
     const month = (expenses.data ?? []).filter((e: any) => new Date(e.occurred_at).getTime() >= ms);
     const total = month.reduce((s, r: any) => s + Number(r.amount), 0);
-    const byCat = CATS.map(c => ({ ...c, total: month.filter((e: any) => e.category === c.value).reduce((s, r: any) => s + Number(r.amount), 0) })).filter(c => c.total > 0).sort((a,b) => b.total - a.total);
-    const subs = month.filter((e: any) => e.is_recurring).reduce((s, r: any) => s + Number(r.amount), 0);
+    const byCat = CATS.map((c) => ({
+      ...c,
+      total: month
+        .filter((e: any) => e.category === c.value)
+        .reduce((s, r: any) => s + Number(r.amount), 0),
+    }))
+      .filter((c) => c.total > 0)
+      .sort((a, b) => b.total - a.total);
+    const subs = month
+      .filter((e: any) => e.is_recurring)
+      .reduce((s, r: any) => s + Number(r.amount), 0);
     return { total, byCat, subs };
   }, [expenses.data]);
 
-  const rate = Number(profile.data?.hourly_rate ?? 0);
+  const rate = Number(activeWorkProfile.data?.hourlyRate ?? 0);
 
   return (
     <div className="space-y-6">
@@ -94,45 +131,128 @@ function PengarPage() {
         <div>
           <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Pengar</div>
           <h1 className="display text-4xl">Utgifter</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Varje krona räknad. Ser du var de tar vägen, ser du sanningen.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Varje krona räknad. Ser du var de tar vägen, ser du sanningen.
+          </p>
         </div>
-        <button onClick={() => setOpen(v => !v)} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[oklch(0.88_0.1_85)] to-[oklch(0.7_0.12_75)] px-5 py-2.5 text-sm font-semibold text-background">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-b from-[oklch(0.88_0.1_85)] to-[oklch(0.7_0.12_75)] px-5 py-2.5 text-sm font-semibold text-background"
+        >
           <Plus className="h-4 w-4" /> Ny utgift
         </button>
       </header>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <div className="glass rounded-2xl p-5"><div className="text-[11px] uppercase tracking-widest text-muted-foreground">Totalt denna månad</div><div className="num mt-2 text-3xl text-[oklch(0.7_0.12_28)]">{sek(summary.total)}</div></div>
-        <div className="glass rounded-2xl p-5"><div className="text-[11px] uppercase tracking-widest text-muted-foreground">Prenumerationer</div><div className="num mt-2 text-3xl">{sek(summary.subs)}</div></div>
-        <div className="glass rounded-2xl p-5"><div className="text-[11px] uppercase tracking-widest text-muted-foreground">Snitt per dag</div><div className="num mt-2 text-3xl">{sek(summary.total / Math.max(1, new Date().getDate()))}</div></div>
+        <div className="glass rounded-2xl p-5">
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            Totalt denna månad
+          </div>
+          <div className="num mt-2 text-3xl text-[oklch(0.7_0.12_28)]">{sek(summary.total)}</div>
+        </div>
+        <div className="glass rounded-2xl p-5">
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            Prenumerationer
+          </div>
+          <div className="num mt-2 text-3xl">{sek(summary.subs)}</div>
+        </div>
+        <div className="glass rounded-2xl p-5">
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            Snitt per dag
+          </div>
+          <div className="num mt-2 text-3xl">
+            {sek(summary.total / Math.max(1, new Date().getDate()))}
+          </div>
+        </div>
       </section>
 
       {open && (
-        <form onSubmit={(e) => { e.preventDefault(); add.mutate(); }} className="glass rounded-3xl p-6">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            add.mutate();
+          }}
+          className="glass rounded-3xl p-6"
+        >
           <h2 className="display mb-4 text-xl">Lägg till utgift</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Field label="Belopp (kr)"><input type="number" min={0} step="0.01" value={amount} onChange={e => setAmount(e.target.value === "" ? "" : +e.target.value)} className="inp" required /></Field>
+            <Field label="Belopp (kr)">
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value === "" ? "" : +e.target.value)}
+                className="inp"
+                required
+              />
+            </Field>
             <Field label="Kategori">
-              <select value={cat} onChange={e => setCat(e.target.value)} className="inp">
-                {CATS.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
+              <select value={cat} onChange={(e) => setCat(e.target.value)} className="inp">
+                {CATS.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.emoji} {c.label}
+                  </option>
+                ))}
               </select>
             </Field>
-            <Field label="Datum"><input type="date" value={date} onChange={e => setDate(e.target.value)} className="inp" /></Field>
-            <Field label="Beskrivning"><input value={desc} onChange={e => setDesc(e.target.value)} className="inp" placeholder="Vad köpte du?" /></Field>
-            <Field label="Var?"><input value={merchant} onChange={e => setMerchant(e.target.value)} className="inp" placeholder="t.ex. ICA" /></Field>
+            <Field label="Datum">
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="inp"
+              />
+            </Field>
+            <Field label="Beskrivning">
+              <input
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
+                className="inp"
+                placeholder="Vad köpte du?"
+              />
+            </Field>
+            <Field label="Var?">
+              <input
+                value={merchant}
+                onChange={(e) => setMerchant(e.target.value)}
+                className="inp"
+                placeholder="t.ex. ICA"
+              />
+            </Field>
             <label className="flex items-end gap-2 pb-2 text-sm">
-              <input type="checkbox" checked={recurring} onChange={e => setRecurring(e.target.checked)} className="h-4 w-4 accent-[oklch(0.78_0.105_85)]" />
+              <input
+                type="checkbox"
+                checked={recurring}
+                onChange={(e) => setRecurring(e.target.checked)}
+                className="h-4 w-4 accent-[oklch(0.78_0.105_85)]"
+              />
               Återkommande (t.ex. Netflix)
             </label>
           </div>
           {amount && rate > 0 && (
             <div className="mt-4 rounded-xl border border-[oklch(0.78_0.105_85/0.25)] bg-[oklch(0.78_0.105_85/0.05)] px-4 py-3 text-sm">
-              Det här kostar dig <span className="gold-text font-semibold">{(Number(amount)/rate).toFixed(1)} arbetstimmar</span>.
+              Det här kostar dig{" "}
+              <span className="gold-text font-semibold">
+                {(Number(amount) / rate).toFixed(1)} arbetstimmar
+              </span>
+              .
             </div>
           )}
           <div className="mt-5 flex justify-end gap-2">
-            <button type="button" onClick={() => setOpen(false)} className="rounded-full border border-border px-4 py-2 text-sm">Avbryt</button>
-            <button disabled={add.isPending} className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">Spara</button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-full border border-border px-4 py-2 text-sm"
+            >
+              Avbryt
+            </button>
+            <button
+              disabled={add.isPending}
+              className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            >
+              Spara
+            </button>
           </div>
           <style>{`.inp { width:100%; background:transparent; outline:none; border:1px solid var(--color-border); padding:0.625rem 0.75rem; border-radius:0.75rem; font-size:0.875rem; }`}</style>
         </form>
@@ -144,20 +264,34 @@ function PengarPage() {
           {expenses.isLoading ? (
             <div className="h-24 animate-pulse rounded-xl bg-white/[0.03]" />
           ) : (expenses.data ?? []).length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Inga utgifter än.</div>
+            <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+              Inga utgifter än.
+            </div>
           ) : (
             <ul className="divide-y divide-border">
               {expenses.data!.map((e: any) => {
-                const c = CATS.find(c => c.value === e.category);
+                const c = CATS.find((c) => c.value === e.category);
                 return (
                   <li key={e.id} className="flex items-center gap-3 py-3">
-                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/[0.04] text-base">{c?.emoji}</div>
+                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-white/[0.04] text-base">
+                      {c?.emoji}
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium">{e.description || e.merchant || c?.label}</div>
-                      <div className="text-xs text-muted-foreground">{sweDate(e.occurred_at)} · {c?.label}{e.is_recurring && " · återkommande"}</div>
+                      <div className="truncate font-medium">
+                        {e.description || e.merchant || c?.label}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {sweDate(e.occurred_at)} · {c?.label}
+                        {e.is_recurring && " · återkommande"}
+                      </div>
                     </div>
                     <div className="num text-[oklch(0.7_0.12_28)]">−{sek(Number(e.amount))}</div>
-                    <button onClick={() => del.mutate(e.id)} className="ml-1 grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-white/[0.05] hover:text-[oklch(0.7_0.12_28)]"><Trash2 className="h-4 w-4" /></button>
+                    <button
+                      onClick={() => del.mutate(e.id)}
+                      className="ml-1 grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-white/[0.05] hover:text-[oklch(0.7_0.12_28)]"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </li>
                 );
               })}
@@ -171,16 +305,22 @@ function PengarPage() {
             <div className="text-sm text-muted-foreground">Ingen data än.</div>
           ) : (
             <ul className="space-y-3">
-              {summary.byCat.map(c => {
+              {summary.byCat.map((c) => {
                 const pct = (c.total / summary.total) * 100;
                 return (
                   <li key={c.value}>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2"><Tag className="h-3 w-3 text-muted-foreground" />{c.emoji} {c.label}</span>
+                      <span className="flex items-center gap-2">
+                        <Tag className="h-3 w-3 text-muted-foreground" />
+                        {c.emoji} {c.label}
+                      </span>
                       <span className="num">{sek(c.total)}</span>
                     </div>
                     <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/[0.04]">
-                      <div className="h-full bg-gradient-to-r from-[oklch(0.85_0.12_85)] to-[oklch(0.7_0.12_75)]" style={{ width: `${pct}%` }} />
+                      <div
+                        className="h-full bg-gradient-to-r from-[oklch(0.85_0.12_85)] to-[oklch(0.7_0.12_75)]"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                   </li>
                 );
@@ -196,7 +336,9 @@ function PengarPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11px] uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="mb-1.5 block text-[11px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
       {children}
     </label>
   );
