@@ -5,7 +5,17 @@ import { sek, sweDate, sweTime } from "@/lib/format";
 import { calcMoneyScore } from "@/modules/finance/score";
 import { holidaysForYear } from "@/modules/calendar/holidays";
 import { namedaysFor } from "@/modules/calendar/namedays";
-import { Briefcase, Wallet, Calendar as CalIcon, Sparkles, ArrowUpRight, Plus, TrendingUp } from "lucide-react";
+import { getActiveWorkProfile } from "@/lib/active-work-profile";
+import { currentPayPeriod, isInPeriod, formatPayday } from "@/lib/pay-period";
+import {
+  Briefcase,
+  Wallet,
+  Calendar as CalIcon,
+  Sparkles,
+  ArrowUpRight,
+  Plus,
+  TrendingUp,
+} from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -13,28 +23,49 @@ export const Route = createFileRoute("/_app/dashboard")({
   component: Dashboard,
 });
 
-type Profile = { display_name: string | null; hourly_rate: number | null; tax_rate: number | null; monthly_buffer_goal: number | null; onboarded: boolean | null };
+type Profile = {
+  display_name: string | null;
+  monthly_buffer_goal: number | null;
+  onboarded: boolean | null;
+};
 
 function Dashboard() {
   const profile = useQuery({
     queryKey: ["profile"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return null;
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, monthly_buffer_goal, onboarded")
+        .eq("id", user.id)
+        .maybeSingle();
       if (error) throw error;
       return data as Profile | null;
     },
   });
 
+  const activeWorkProfile = useQuery({
+    queryKey: ["active-work-profile"],
+    queryFn: getActiveWorkProfile,
+  });
+
   const shifts = useQuery({
     queryKey: ["shifts", "month"],
     queryFn: async () => {
-      const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0);
-      const end = new Date(start); end.setMonth(end.getMonth() + 1);
+      const start = new Date();
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setMonth(end.getMonth() + 1);
       const { data, error } = await supabase
-        .from("shifts").select("*")
-        .gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString())
+        .from("shifts")
+        .select("*")
+        .is("deleted_at", null)
+        .gte("starts_at", start.toISOString())
+        .lt("starts_at", end.toISOString())
         .order("starts_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -44,9 +75,12 @@ function Dashboard() {
   const expenses = useQuery({
     queryKey: ["expenses", "month"],
     queryFn: async () => {
-      const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0);
+      const start = new Date();
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
       const { data, error } = await supabase
-        .from("expenses").select("*")
+        .from("expenses")
+        .select("*")
         .gte("occurred_at", start.toISOString())
         .order("occurred_at", { ascending: false });
       if (error) throw error;
@@ -58,7 +92,9 @@ function Dashboard() {
     queryKey: ["shifts", "upcoming"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("shifts").select("*")
+        .from("shifts")
+        .select("*")
+        .is("deleted_at", null)
         .gte("starts_at", new Date().toISOString())
         .order("starts_at", { ascending: true })
         .limit(4);
@@ -69,38 +105,61 @@ function Dashboard() {
 
   const monthIncome = (shifts.data ?? []).reduce((s, r: any) => s + Number(r.total_amount ?? 0), 0);
   const monthSpend = (expenses.data ?? []).reduce((s, r: any) => s + Number(r.amount ?? 0), 0);
-  const recurringSubs = (expenses.data ?? []).filter((e: any) => e.is_recurring).reduce((s, r: any) => s + Number(r.amount), 0);
+  const recurringSubs = (expenses.data ?? [])
+    .filter((e: any) => e.is_recurring)
+    .reduce((s, r: any) => s + Number(r.amount), 0);
 
-  const score = useMemo(() => calcMoneyScore({
-    monthlyIncome: monthIncome,
-    monthlyExpenses: monthSpend,
-    recurringSubs,
-    bufferMonths: 0,
-    daysWithoutImpulse: 0,
-    plannedVsActualRatio: 0.5,
-  }), [monthIncome, monthSpend, recurringSubs]);
+  const period = useMemo(() => {
+    return currentPayPeriod({
+      periodStartDay: activeWorkProfile.data?.periodStartDay ?? 1,
+      paydayDay: activeWorkProfile.data?.paydayDay ?? 25,
+      paydayOffsetMonths: activeWorkProfile.data?.paydayOffsetMonths ?? 1,
+    });
+  }, [activeWorkProfile.data]);
+
+  const periodIncome = useMemo(() => {
+    return (shifts.data ?? [])
+      .filter((s: any) => isInPeriod(period, s.starts_at))
+      .reduce((sum: number, r: any) => sum + Number(r.total_amount ?? 0), 0);
+  }, [shifts.data, period]);
+
+  const score = useMemo(
+    () =>
+      calcMoneyScore({
+        monthlyIncome: periodIncome,
+        monthlyExpenses: monthSpend,
+        recurringSubs,
+        bufferMonths: 0,
+        daysWithoutImpulse: 0,
+        plannedVsActualRatio: 0.5,
+      }),
+    [periodIncome, monthSpend, recurringSubs],
+  );
 
   const today = new Date();
   const holidays = holidaysForYear(today.getFullYear());
-  const todaysHoliday = holidays.find(h => h.date === today.toISOString().slice(0, 10));
+  const todaysHoliday = holidays.find((h) => h.date === today.toISOString().slice(0, 10));
   const namedaysToday = namedaysFor(today);
 
   // Onboarding nudge
   useEffect(() => {
-    if (profile.data && (profile.data.hourly_rate ?? 0) === 0) {
+    if ((activeWorkProfile.data?.hourlyRate ?? 0) === 0) {
       toast("Tips: Lägg in din timlön i Inställningar för automatisk löneräkning.", {
         action: { label: "Öppna", onClick: () => location.assign("/installningar") },
       });
     }
-  }, [profile.data]);
+  }, [activeWorkProfile.data?.hourlyRate]);
 
   return (
     <div className="space-y-8">
       {/* Greeting */}
       <header>
-        <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{sweDate(today)}</div>
+        <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          {sweDate(today)}
+        </div>
         <h1 className="display mt-2 text-4xl sm:text-5xl">
-          God dag, <span className="gold-text">{profile.data?.display_name?.split(" ")[0] || "vän"}</span>.
+          God dag,{" "}
+          <span className="gold-text">{profile.data?.display_name?.split(" ")[0] || "vän"}</span>.
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {todaysHoliday ? `Idag är det ${todaysHoliday.name}. ` : ""}
@@ -112,7 +171,9 @@ function Dashboard() {
       <section className="grid gap-5 lg:grid-cols-3">
         <div className="glass relative col-span-2 overflow-hidden rounded-3xl p-8">
           <div className="absolute -top-20 -right-10 h-64 w-64 rounded-full bg-[radial-gradient(closest-side,oklch(0.78_0.105_85/0.18),transparent)]" />
-          <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Money Score</div>
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            Money Score
+          </div>
           <div className="mt-3 flex items-end gap-4">
             <div className="num gold-text text-8xl leading-none">{score.score}</div>
             <div className="pb-2">
@@ -122,10 +183,18 @@ function Dashboard() {
           </div>
           <div className="mt-6 grid gap-2 sm:grid-cols-2">
             {score.drivers.slice(0, 4).map((d) => (
-              <div key={d.label} className="flex items-center justify-between rounded-xl border border-border bg-white/[0.02] px-3 py-2 text-sm">
+              <div
+                key={d.label}
+                className="flex items-center justify-between rounded-xl border border-border bg-white/[0.02] px-3 py-2 text-sm"
+              >
                 <span className="text-muted-foreground">{d.label}</span>
-                <span className={d.positive ? "text-[oklch(0.75_0.1_165)]" : "text-[oklch(0.7_0.12_28)]"}>
-                  {d.delta > 0 ? "+" : ""}{d.delta}
+                <span
+                  className={
+                    d.positive ? "text-[oklch(0.75_0.1_165)]" : "text-[oklch(0.7_0.12_28)]"
+                  }
+                >
+                  {d.delta > 0 ? "+" : ""}
+                  {d.delta}
                 </span>
               </div>
             ))}
@@ -133,13 +202,34 @@ function Dashboard() {
         </div>
 
         <div className="glass rounded-3xl p-6">
-          <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Denna månad</div>
-          <div className="mt-4 space-y-4">
-            <Metric icon={<Briefcase className="h-4 w-4" />} label="Intjänat" value={sek(monthIncome)} accent="gold" />
-            <Metric icon={<Wallet className="h-4 w-4" />} label="Spenderat" value={sek(monthSpend)} accent="coral" />
-            <Metric icon={<TrendingUp className="h-4 w-4" />} label="Netto" value={sek(monthIncome - monthSpend)} accent={monthIncome - monthSpend >= 0 ? "emerald" : "coral"} />
+          <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            {period.label}
           </div>
-          <Link to="/pengar" className="mt-5 inline-flex items-center gap-1 text-xs text-[oklch(0.85_0.12_85)] hover:underline">
+          <div className="mt-4 space-y-4">
+            <Metric
+              icon={<Briefcase className="h-4 w-4" />}
+              label="Intjänat"
+              value={sek(periodIncome)}
+              accent="gold"
+              sub={`Utbet. ~${formatPayday(period.payday)}`}
+            />
+            <Metric
+              icon={<Wallet className="h-4 w-4" />}
+              label="Spenderat"
+              value={sek(monthSpend)}
+              accent="coral"
+            />
+            <Metric
+              icon={<TrendingUp className="h-4 w-4" />}
+              label="Netto"
+              value={sek(periodIncome - monthSpend)}
+              accent={periodIncome - monthSpend >= 0 ? "emerald" : "coral"}
+            />
+          </div>
+          <Link
+            to="/pengar"
+            className="mt-5 inline-flex items-center gap-1 text-xs text-[oklch(0.85_0.12_85)] hover:underline"
+          >
             Se detaljer <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
@@ -150,7 +240,9 @@ function Dashboard() {
         <div className="glass col-span-2 rounded-3xl p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="display text-xl">Kommande pass</h2>
-            <Link to="/jobb" className="text-xs text-[oklch(0.85_0.12_85)] hover:underline">Hantera →</Link>
+            <Link to="/jobb" className="text-xs text-[oklch(0.85_0.12_85)] hover:underline">
+              Hantera →
+            </Link>
           </div>
           {upcomingShifts.isLoading ? (
             <Skeleton />
@@ -163,7 +255,10 @@ function Dashboard() {
           ) : (
             <ul className="space-y-2">
               {upcomingShifts.data!.map((s: any) => (
-                <li key={s.id} className="flex items-center gap-4 rounded-xl border border-border bg-white/[0.02] p-3">
+                <li
+                  key={s.id}
+                  className="flex items-center gap-4 rounded-xl border border-border bg-white/[0.02] p-3"
+                >
                   <div className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-[oklch(0.78_0.105_85/0.18)] to-transparent">
                     <CalIcon className="h-5 w-5 text-[oklch(0.85_0.12_85)]" />
                   </div>
@@ -174,8 +269,14 @@ function Dashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="num text-base gold-text">{sek(Number(s.total_amount || 0))}</div>
-                    {Number(s.ob_amount) > 0 && <div className="text-[10px] uppercase tracking-wider text-muted-foreground">+ OB {sek(Number(s.ob_amount))}</div>}
+                    <div className="num text-base gold-text">
+                      {sek(Number(s.total_amount || 0))}
+                    </div>
+                    {Number(s.ob_amount) > 0 && (
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        + OB {sek(Number(s.ob_amount))}
+                      </div>
+                    )}
                   </div>
                 </li>
               ))}
@@ -189,13 +290,23 @@ function Dashboard() {
             <div className="mt-4 space-y-2">
               <QuickAction to="/jobb" icon={<Plus className="h-4 w-4" />} label="Nytt pass" />
               <QuickAction to="/pengar" icon={<Plus className="h-4 w-4" />} label="Ny utgift" />
-              <QuickAction to="/kalender" icon={<CalIcon className="h-4 w-4" />} label="Öppna kalender" />
-              <QuickAction to="/insikter" icon={<Sparkles className="h-4 w-4" />} label="Visa insikter" />
+              <QuickAction
+                to="/kalender"
+                icon={<CalIcon className="h-4 w-4" />}
+                label="Öppna kalender"
+              />
+              <QuickAction
+                to="/insikter"
+                icon={<Sparkles className="h-4 w-4" />}
+                label="Visa insikter"
+              />
             </div>
           </div>
 
           <div className="glass rounded-3xl p-6">
-            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Nästa röda dag</div>
+            <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+              Nästa röda dag
+            </div>
             <NextHoliday />
           </div>
         </div>
@@ -205,46 +316,95 @@ function Dashboard() {
 }
 
 function NextHoliday() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const all = [...holidaysForYear(today.getFullYear()), ...holidaysForYear(today.getFullYear() + 1)];
-  const next = all.filter(h => h.type === "red").find(h => new Date(h.date) >= today);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const all = [
+    ...holidaysForYear(today.getFullYear()),
+    ...holidaysForYear(today.getFullYear() + 1),
+  ];
+  const next = all.filter((h) => h.type === "red").find((h) => new Date(h.date) >= today);
   if (!next) return <div className="mt-2 text-sm text-muted-foreground">—</div>;
   const days = Math.ceil((new Date(next.date).getTime() - today.getTime()) / 86400000);
   return (
     <div className="mt-3">
       <div className="display text-xl">{next.name}</div>
-      <div className="text-sm text-muted-foreground">{sweDate(next.date)} · om {days} dagar</div>
+      <div className="text-sm text-muted-foreground">
+        {sweDate(next.date)} · om {days} dagar
+      </div>
     </div>
   );
 }
 
-function Metric({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent: "gold" | "coral" | "emerald" }) {
-  const color = accent === "gold" ? "text-[oklch(0.85_0.12_85)]" : accent === "coral" ? "text-[oklch(0.7_0.12_28)]" : "text-[oklch(0.75_0.1_165)]";
+function Metric({
+  icon,
+  label,
+  value,
+  accent,
+  sub,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent: "gold" | "coral" | "emerald";
+  sub?: string;
+}) {
+  const color =
+    accent === "gold"
+      ? "text-[oklch(0.85_0.12_85)]"
+      : accent === "coral"
+        ? "text-[oklch(0.7_0.12_28)]"
+        : "text-[oklch(0.75_0.1_165)]";
   return (
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">{icon}{label}</div>
-      <div className={`num text-xl ${color}`}>{value}</div>
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <div className="text-right">
+        <div className={`num text-xl ${color}`}>{value}</div>
+        {sub && <div className="text-[10px] text-muted-foreground">{sub}</div>}
+      </div>
     </div>
   );
 }
 
 function QuickAction({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
   return (
-    <Link to={to} className="flex items-center gap-3 rounded-xl border border-border bg-white/[0.02] px-3 py-2.5 text-sm transition hover:bg-white/[0.06]">
-      <span className="grid h-7 w-7 place-items-center rounded-lg bg-[oklch(0.78_0.105_85/0.15)] text-[oklch(0.85_0.12_85)]">{icon}</span>
+    <Link
+      to={to}
+      className="flex items-center gap-3 rounded-xl border border-border bg-white/[0.02] px-3 py-2.5 text-sm transition hover:bg-white/[0.06]"
+    >
+      <span className="grid h-7 w-7 place-items-center rounded-lg bg-[oklch(0.78_0.105_85/0.15)] text-[oklch(0.85_0.12_85)]">
+        {icon}
+      </span>
       {label}
     </Link>
   );
 }
 
-function EmptyState({ title, body, cta }: { title: string; body: string; cta: { to: string; label: string } }) {
+function EmptyState({
+  title,
+  body,
+  cta,
+}: {
+  title: string;
+  body: string;
+  cta: { to: string; label: string };
+}) {
   return (
     <div className="rounded-2xl border border-dashed border-border p-8 text-center">
       <div className="display text-lg">{title}</div>
       <p className="mt-1 text-sm text-muted-foreground">{body}</p>
-      <Link to={cta.to} className="mt-4 inline-flex rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground">{cta.label}</Link>
+      <Link
+        to={cta.to}
+        className="mt-4 inline-flex rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground"
+      >
+        {cta.label}
+      </Link>
     </div>
   );
 }
 
-function Skeleton() { return <div className="h-32 animate-pulse rounded-xl bg-white/[0.03]" />; }
+function Skeleton() {
+  return <div className="h-32 animate-pulse rounded-xl bg-white/[0.03]" />;
+}

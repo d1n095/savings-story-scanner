@@ -26,6 +26,8 @@ export type ComputeInput = {
   fallbackObRules?: OBRule[];
 };
 
+export const PAY_ENGINE_VERSION = 1;
+
 export type ComputeResult = {
   hourly_rate: number;
   base_amount: number;
@@ -34,6 +36,10 @@ export type ComputeResult = {
   on_call_hours: number | null;
   active_minutes: number;
   break_minutes: number;
+  /** Snapshot of all calculation inputs – immutable audit record per ADR-001. */
+  pay_snapshot: Record<string, unknown>;
+  pay_engine_version: number;
+  pay_computed_at: string;
 };
 
 export function pickHourlyRate(p: ProfileLike | null | undefined, type: ShiftType): number {
@@ -90,6 +96,23 @@ export function computeShiftAmounts(input: ComputeInput): ComputeResult {
     on_call_hours: shiftType === "regular" ? null : +totalHours.toFixed(2),
     active_minutes: shiftType === "regular" ? 0 : activeMinutes,
     break_minutes: effectiveBreak,
+    pay_snapshot: {
+      engine_version: PAY_ENGINE_VERSION,
+      computed_at: new Date().toISOString(),
+      shift_type: shiftType,
+      hourly_rate: rate,
+      ob_rules: obRules,
+      starts_at: startsAt.toISOString(),
+      ends_at: endsAt.toISOString(),
+      break_minutes: effectiveBreak,
+      active_minutes: shiftType === "regular" ? 0 : activeMinutes,
+      ob_breakdown: calc.breakdown,
+      base_amount: +base.toFixed(2),
+      ob_amount: +ob.toFixed(2),
+      total_amount: +(base + ob).toFixed(2),
+    },
+    pay_engine_version: PAY_ENGINE_VERSION,
+    pay_computed_at: new Date().toISOString(),
   };
 }
 

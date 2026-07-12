@@ -206,6 +206,62 @@ export type Database = {
         }
         Relationships: []
       }
+      pay_periods: {
+        Row: {
+          created_at: string
+          id: string
+          is_locked: boolean
+          notes: string | null
+          payday: string
+          period_end: string
+          period_start: string
+          status: string
+          total_earned: number | null
+          total_paid: number | null
+          updated_at: string
+          user_id: string
+          work_profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          notes?: string | null
+          payday: string
+          period_end: string
+          period_start: string
+          status?: string
+          total_earned?: number | null
+          total_paid?: number | null
+          updated_at?: string
+          user_id: string
+          work_profile_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          notes?: string | null
+          payday?: string
+          period_end?: string
+          period_start?: string
+          status?: string
+          total_earned?: number | null
+          total_paid?: number | null
+          updated_at?: string
+          user_id?: string
+          work_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pay_periods_work_profile_id_fkey"
+            columns: ["work_profile_id"]
+            isOneToOne: false
+            referencedRelation: "work_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rotations: {
         Row: {
           created_at: string
@@ -235,6 +291,87 @@ export type Database = {
           weeks_json?: Json
         }
         Relationships: []
+      }
+      payslips: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          gross_salary: number | null
+          id: string
+          net_salary: number | null
+          ob_amount: number | null
+          ocr_raw: string | null
+          on_call_amount: number | null
+          overtime_amount: number | null
+          pay_period_id: string | null
+          period_end: string
+          period_start: string
+          tax_amount: number | null
+          total_hours: number | null
+          updated_at: string
+          user_id: string
+          vacation_pay: number | null
+          verified_at: string | null
+          work_profile_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          gross_salary?: number | null
+          id?: string
+          net_salary?: number | null
+          ob_amount?: number | null
+          ocr_raw?: string | null
+          on_call_amount?: number | null
+          overtime_amount?: number | null
+          pay_period_id?: string | null
+          period_end: string
+          period_start: string
+          tax_amount?: number | null
+          total_hours?: number | null
+          updated_at?: string
+          user_id: string
+          vacation_pay?: number | null
+          verified_at?: string | null
+          work_profile_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          gross_salary?: number | null
+          id?: string
+          net_salary?: number | null
+          ob_amount?: number | null
+          ocr_raw?: string | null
+          on_call_amount?: number | null
+          overtime_amount?: number | null
+          pay_period_id?: string | null
+          period_end?: string
+          period_start?: string
+          tax_amount?: number | null
+          total_hours?: number | null
+          updated_at?: string
+          user_id?: string
+          vacation_pay?: number | null
+          verified_at?: string | null
+          work_profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_work_profile_id_fkey"
+            columns: ["work_profile_id"]
+            isOneToOne: false
+            referencedRelation: "work_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_pay_period_id_fkey"
+            columns: ["pay_period_id"]
+            isOneToOne: false
+            referencedRelation: "pay_periods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shift_templates: {
         Row: {
@@ -284,6 +421,7 @@ export type Database = {
           base_amount: number | null
           break_minutes: number
           created_at: string
+          deleted_at: string | null
           ends_at: string
           hourly_rate: number | null
           id: string
@@ -291,6 +429,10 @@ export type Database = {
           notes: string | null
           ob_amount: number | null
           on_call_hours: number | null
+          pay_computed_at: string | null
+          pay_engine_version: number
+          pay_period_id: string | null
+          pay_snapshot: Json | null
           shift_type: Database["public"]["Enums"]["shift_type"]
           starts_at: string
           title: string | null
@@ -304,6 +446,7 @@ export type Database = {
           base_amount?: number | null
           break_minutes?: number
           created_at?: string
+          deleted_at?: string | null
           ends_at: string
           hourly_rate?: number | null
           id?: string
@@ -311,6 +454,10 @@ export type Database = {
           notes?: string | null
           ob_amount?: number | null
           on_call_hours?: number | null
+          pay_computed_at?: string | null
+          pay_engine_version?: number
+          pay_period_id?: string | null
+          pay_snapshot?: Json | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
           starts_at: string
           title?: string | null
@@ -324,6 +471,7 @@ export type Database = {
           base_amount?: number | null
           break_minutes?: number
           created_at?: string
+          deleted_at?: string | null
           ends_at?: string
           hourly_rate?: number | null
           id?: string
@@ -331,6 +479,10 @@ export type Database = {
           notes?: string | null
           ob_amount?: number | null
           on_call_hours?: number | null
+          pay_computed_at?: string | null
+          pay_engine_version?: number
+          pay_period_id?: string | null
+          pay_snapshot?: Json | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
           starts_at?: string
           title?: string | null
@@ -345,6 +497,64 @@ export type Database = {
             columns: ["work_profile_id"]
             isOneToOne: false
             referencedRelation: "work_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shifts_pay_period_id_fkey"
+            columns: ["pay_period_id"]
+            isOneToOne: false
+            referencedRelation: "pay_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pay_recompute_log: {
+        Row: {
+          id: string
+          new_snapshot: Json | null
+          new_total: number | null
+          old_snapshot: Json | null
+          old_total: number | null
+          reason: string
+          recomputed_at: string
+          shift_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          new_snapshot?: Json | null
+          new_total?: number | null
+          old_snapshot?: Json | null
+          old_total?: number | null
+          reason: string
+          recomputed_at?: string
+          shift_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          new_snapshot?: Json | null
+          new_total?: number | null
+          old_snapshot?: Json | null
+          old_total?: number | null
+          reason?: string
+          recomputed_at?: string
+          shift_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pay_recompute_log_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pay_recompute_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -633,8 +843,11 @@ export type Database = {
           occupation: string | null
           on_call_rate: number | null
           overtime_rules: Json | null
+          payday_day: number
+          payday_offset_months: number
           pension_pct: number | null
           per_diem: number | null
+          period_start_day: number
           sick_pay_rate: number | null
           sleeping_on_call_rate: number | null
           standby_rate: number | null
@@ -643,6 +856,7 @@ export type Database = {
           user_id: string
           vab_rate: number | null
           vacation_days_per_year: number | null
+          vacation_pay_percent: number
           waking_on_call_rate: number | null
           workplace: string | null
         }
@@ -669,8 +883,11 @@ export type Database = {
           occupation?: string | null
           on_call_rate?: number | null
           overtime_rules?: Json | null
+          payday_day?: number
+          payday_offset_months?: number
           pension_pct?: number | null
           per_diem?: number | null
+          period_start_day?: number
           sick_pay_rate?: number | null
           sleeping_on_call_rate?: number | null
           standby_rate?: number | null
@@ -679,6 +896,7 @@ export type Database = {
           user_id: string
           vab_rate?: number | null
           vacation_days_per_year?: number | null
+          vacation_pay_percent?: number
           waking_on_call_rate?: number | null
           workplace?: string | null
         }
@@ -705,8 +923,11 @@ export type Database = {
           occupation?: string | null
           on_call_rate?: number | null
           overtime_rules?: Json | null
+          payday_day?: number
+          payday_offset_months?: number
           pension_pct?: number | null
           per_diem?: number | null
+          period_start_day?: number
           sick_pay_rate?: number | null
           sleeping_on_call_rate?: number | null
           standby_rate?: number | null
@@ -715,6 +936,7 @@ export type Database = {
           user_id?: string
           vab_rate?: number | null
           vacation_days_per_year?: number | null
+          vacation_pay_percent?: number
           waking_on_call_rate?: number | null
           workplace?: string | null
         }
