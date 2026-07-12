@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_OB_RULES, type OBRule } from "@/modules/salary/ob";
+import { getActiveWorkProfile } from "@/lib/active-work-profile";
 import { NumericField } from "@/components/ui/numeric-field";
 import { toast } from "sonner";
 import { Briefcase, Check, ChevronLeft, ChevronRight, Clock, Moon, Plus, Save, ShieldCheck, Sparkles, Sun, Trash2, Zap } from "lucide-react";
@@ -84,34 +85,81 @@ function SettingsPage() {
     queryKey: ["profile"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, monthly_buffer_goal")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
       return data;
     },
+  });
+
+  const activeWorkProfile = useQuery({
+    queryKey: ["active-work-profile"],
+    queryFn: getActiveWorkProfile,
   });
 
   useEffect(() => {
     if (!profile.data) return;
     setName(profile.data.display_name || "");
-    setRate(Number(profile.data.hourly_rate ?? 0));
-    setTax(Number(profile.data.tax_rate ?? 30));
     setBuf(Number(profile.data.monthly_buffer_goal ?? 0));
-    setRules(((profile.data.ob_rules as OBRule[] | null) ?? []).length ? (profile.data.ob_rules as OBRule[]) : DEFAULT_OB_RULES);
   }, [profile.data]);
+
+  useEffect(() => {
+    if (!activeWorkProfile.data) {
+      setRate(0);
+      setTax(30);
+      setRules(DEFAULT_OB_RULES);
+      return;
+    }
+    setRate(Number(activeWorkProfile.data.hourlyRate ?? 0));
+    setTax(Number(activeWorkProfile.data.taxRate ?? 30));
+    setRules(activeWorkProfile.data.obRules.length ? activeWorkProfile.data.obRules : DEFAULT_OB_RULES);
+  }, [activeWorkProfile.data]);
 
   const save = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from("profiles").update({
+      if (!user) throw new Error("Inte inloggad");
+
+      const { error: profileError } = await supabase.from("profiles").update({
         display_name: name,
-        hourly_rate: Number(rate ?? 0),
-        tax_rate: tax,
         monthly_buffer_goal: buf,
-        ob_rules: rules,
         onboarded: true,
-      }).eq("id", user!.id);
-      if (error) throw error;
+      }).eq("id", user.id);
+      if (profileError) throw profileError;
+
+      if (activeWorkProfile.data?.id) {
+        const { error: workProfileError } = await supabase
+          .from("work_profiles")
+          .update({
+            hourly_rate: Number(rate ?? 0),
+            tax_rate: tax,
+            ob_rules: rules,
+          })
+          .eq("id", activeWorkProfile.data.id);
+        if (workProfileError) throw workProfileError;
+      } else {
+        const { error: createWorkProfileError } = await supabase
+          .from("work_profiles")
+          .insert({
+            user_id: user.id,
+            name: "Standard",
+            is_default: true,
+            hourly_rate: Number(rate ?? 0),
+            tax_rate: tax,
+            ob_rules: rules,
+          });
+        if (createWorkProfileError) throw createWorkProfileError;
+      }
     },
-    onSuccess: () => { toast.success("Sparat"); qc.invalidateQueries({ queryKey: ["profile"] }); },
+    onSuccess: () => {
+      toast.success("Sparat");
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      qc.invalidateQueries({ queryKey: ["active-work-profile"] });
+      qc.invalidateQueries({ queryKey: ["work-profiles"] });
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
