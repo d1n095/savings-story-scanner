@@ -12,6 +12,13 @@ import { cn } from "@/lib/utils";
 
 type ConflictAction = "skip" | "replace";
 
+type ExistingMatch = {
+  id: string;
+  label: string;
+  exact: boolean;
+  total: number;
+};
+
 type ParsedShift = {
   date: string;
   from: string;
@@ -21,7 +28,7 @@ type ParsedShift = {
   active_minutes: number;
   note: string;
   confidence: number;
-  conflict?: { id: string; label: string } | null;
+  conflict?: ExistingMatch | null;
   action?: ConflictAction;
 };
 
@@ -49,6 +56,30 @@ function toRange(r: { date: string; from: string; to: string }) {
   return { start, end };
 }
 
+function shiftKey(r: { date: string; from: string; to: string; shift_type: ShiftType }) {
+  return `${r.date}__${r.from}__${r.to}__${r.shift_type}`;
+}
+
+function dedupeParsedRows(input: ParsedShift[]) {
+  const byKey = new Map<string, ParsedShift>();
+  for (const row of input) {
+    const key = shiftKey(row);
+    const existing = byKey.get(key);
+    if (!existing || row.confidence > existing.confidence) byKey.set(key, row);
+  }
+  return Array.from(byKey.values()).sort((a, b) => {
+    const ar = toRange(a).start.getTime();
+    const br = toRange(b).start.getTime();
+    return ar - br;
+  });
+}
+
+function formatExistingShift(hit: { starts_at: string; ends_at: string }) {
+  const from = new Date(hit.starts_at);
+  const to = new Date(hit.ends_at);
+  return `${from.toLocaleDateString("sv-SE", { day: "numeric", month: "short" })} ${String(from.getHours()).padStart(2, "0")}:${String(from.getMinutes()).padStart(2, "0")}–${String(to.getHours()).padStart(2, "0")}:${String(to.getMinutes()).padStart(2, "0")}`;
+}
+
 function ImportSchedulePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -65,18 +96,23 @@ function ImportSchedulePage() {
     },
   });
   const profile: any = profileQ.data?.find((p: any) => p.is_default) ?? profileQ.data?.[0] ?? null;
+  const rowsSignature = useMemo(() => rows.map((r) => `${r.date}|${r.from}|${r.to}|${r.shift_type}`).join(";"), [rows]);
 
   const analyze = useMutation({
     mutationFn: async (dataUrl: string) => parse({ data: { imageDataUrl: dataUrl } }),
     onSuccess: (res) => {
-      setRows(res.shifts.map((s: any) => ({
+      const nextRows = dedupeParsedRows(res.shifts.map((s: any) => ({
         ...s,
         active_minutes: 0,
         conflict: null,
         action: "skip" as ConflictAction,
       })));
+      setRows(nextRows);
       setWarning(res.warning ?? null);
-      if (res.shifts.length > 0) toast.success(`Hittade ${res.shifts.length} pass`);
+      if (nextRows.length > 0) {
+        const removed = Math.max(0, res.shifts.length - nextRows.length);
+        toast.success(removed > 0 ? `Hittade ${nextRows.length} pass · ${removed} dublett togs bort` : `Hittade ${nextRows.length} pass`);
+      }
     },
     onError: (e: any) => toast.error(e.message ?? "Kunde inte tolka bilden"),
   });
@@ -93,27 +129,31 @@ function ImportSchedulePage() {
       const maxEnd = new Date(Math.max(...ranges.map((r) => r.end.getTime())) + 86400000);
       const { data: existing } = await supabase
         .from("shifts")
-        .select("id, starts_at, ends_at")
+        .select("id, starts_at, ends_at, total_amount")
         .gte("starts_at", minStart.toISOString())
         .lte("ends_at", maxEnd.toISOString());
       if (cancelled) return;
       setRows((prev) => prev.map((r, i) => {
         const { start, end } = ranges[i];
-        const hit = (existing ?? []).find((ex: any) => {
+        const hits = (existing ?? []).filter((ex: any) => {
           const es = new Date(ex.starts_at).getTime();
           const ee = new Date(ex.ends_at).getTime();
           return es < end.getTime() && ee > start.getTime();
         });
+        const exact = hits.find((ex: any) => new Date(ex.starts_at).getTime() === start.getTime() && new Date(ex.ends_at).getTime() === end.getTime());
+        const hit = exact ?? hits[0];
         if (!hit) return { ...r, conflict: null };
-        const from = new Date(hit.starts_at);
-        const to = new Date(hit.ends_at);
-        const label = `${from.toLocaleDateString("sv-SE",{day:"numeric",month:"short"})} ${String(from.getHours()).padStart(2,"0")}:${String(from.getMinutes()).padStart(2,"0")}–${String(to.getHours()).padStart(2,"0")}:${String(to.getMinutes()).padStart(2,"0")}`;
-        return { ...r, conflict: { id: hit.id, label }, action: r.action ?? "skip" };
+        const total = Number(hit.total_amount ?? 0);
+        return {
+          ...r,
+          conflict: { id: hit.id, label: formatExistingShift(hit), exact: !!exact, total },
+          action: r.action ?? (exact && total <= 0 ? "replace" : "skip"),
+        };
       }));
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows.length]);
+  }, [rowsSignature]);
 
   const previewByRow = useMemo(() => rows.map((r) => {
     const { start, end } = toRange(r);
@@ -167,7 +207,7 @@ function ImportSchedulePage() {
       });
 
       if (replaceIds.length > 0) {
-        const { error } = await supabase.from("shifts").delete().in("id", replaceIds);
+        const { error } = await supabase.from("shifts").delete().in("id", Array.from(new Set(replaceIds)));
         if (error) throw error;
       }
       if (inserts.length > 0) {
