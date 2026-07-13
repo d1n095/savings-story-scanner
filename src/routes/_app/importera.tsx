@@ -96,6 +96,7 @@ function ImportSchedulePage() {
     },
   });
   const profile: any = profileQ.data?.find((p: any) => p.is_default) ?? profileQ.data?.[0] ?? null;
+  const rowsSignature = useMemo(() => rows.map((r) => `${r.date}|${r.from}|${r.to}|${r.shift_type}`).join(";"), [rows]);
 
   const analyze = useMutation({
     mutationFn: async (dataUrl: string) => parse({ data: { imageDataUrl: dataUrl } }),
@@ -139,7 +140,7 @@ function ImportSchedulePage() {
           const ee = new Date(ex.ends_at).getTime();
           return es < end.getTime() && ee > start.getTime();
         });
-        const exact = hits.find((ex: any) => ex.starts_at === start.toISOString() && ex.ends_at === end.toISOString());
+        const exact = hits.find((ex: any) => new Date(ex.starts_at).getTime() === start.getTime() && new Date(ex.ends_at).getTime() === end.getTime());
         const hit = exact ?? hits[0];
         if (!hit) return { ...r, conflict: null };
         const total = Number(hit.total_amount ?? 0);
@@ -152,7 +153,7 @@ function ImportSchedulePage() {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows.length]);
+  }, [rowsSignature]);
 
   const previewByRow = useMemo(() => rows.map((r) => {
     const { start, end } = toRange(r);
