@@ -73,7 +73,7 @@ function AppLayout() {
         )}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center gap-3 px-6 pt-7 pb-6">
+          <Link to="/idag" onClick={() => setOpen(false)} className="flex items-center gap-3 px-6 pt-7 pb-6 hover:opacity-90">
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-[oklch(0.85_0.12_85)] to-[oklch(0.6_0.1_75)] text-background shadow-[0_8px_24px_-8px_oklch(0.78_0.105_85/0.6)]">
               <span className="display text-lg">M</span>
             </div>
@@ -81,7 +81,7 @@ function AppLayout() {
               <div className="display text-base leading-tight">My Money <span className="gold-text">Master</span></div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Life OS · 2030</div>
             </div>
-          </div>
+          </Link>
 
           <nav className="flex-1 space-y-1 px-3">
             {PRIMARY.map((item) => {
