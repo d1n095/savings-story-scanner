@@ -188,7 +188,7 @@ function AppLayout() {
         <button onClick={() => setOpen((v) => !v)} className="rounded-lg border border-border p-2">
           {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </button>
-        <div className="display text-base">My Money <span className="gold-text">Master</span></div>
+        <Link to="/idag" className="display text-base hover:opacity-90">My Money <span className="gold-text">Master</span></Link>
         <Link
           to="/installningar"
           aria-label="Inställningar"
