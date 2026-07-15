@@ -2,11 +2,13 @@
 // Används av både snabb-flödet, schema-import och /jobb så vi aldrig får 0 kr efter import.
 
 import { calculateShift, DEFAULT_OB_RULES, type OBRule } from "./ob";
+import { applyBreakRules, normalizeBreakRules } from "./breaks";
 
 export type ShiftType = "regular" | "waking_on_call" | "sleeping_on_call" | "standby";
 
 type ProfileLike = {
   hourly_rate?: number | null;
+
   waking_on_call_rate?: number | null;
   sleeping_on_call_rate?: number | null;
   standby_rate?: number | null;
