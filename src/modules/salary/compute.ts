@@ -2,17 +2,21 @@
 // Används av både snabb-flödet, schema-import och /jobb så vi aldrig får 0 kr efter import.
 
 import { calculateShift, DEFAULT_OB_RULES, type OBRule } from "./ob";
+import { applyBreakRules, normalizeBreakRules } from "./breaks";
 
 export type ShiftType = "regular" | "waking_on_call" | "sleeping_on_call" | "standby";
 
 type ProfileLike = {
   hourly_rate?: number | null;
+
   waking_on_call_rate?: number | null;
   sleeping_on_call_rate?: number | null;
   standby_rate?: number | null;
   on_call_rate?: number | null;
   callout_rate?: number | null;
   ob_rules?: unknown;
+  break_rules?: unknown;
+
 };
 
 export type ComputeInput = {
@@ -62,7 +66,17 @@ export function computeShiftAmounts(input: ComputeInput): ComputeResult {
   const rate = pickHourlyRate(profile, shiftType);
   const obRules = normalizeObRules(profile?.ob_rules, input.fallbackObRules ?? DEFAULT_OB_RULES);
   const totalHours = Math.max(0, (endsAt.getTime() - startsAt.getTime()) / 3600000);
-  const effectiveBreak = shiftType === "regular" ? breakMinutes : 0;
+
+  // Auto-rast: om ingen rast angetts och profilen har mode:"auto" → tillämpa regeln.
+  // (En sanning: samma logik oavsett var passet skapas — snabb-flöde, import, planering.)
+  let effectiveBreak = shiftType === "regular" ? breakMinutes : 0;
+  if (shiftType === "regular" && effectiveBreak === 0 && profile?.break_rules) {
+    const rules = normalizeBreakRules(profile.break_rules);
+    if (rules.mode === "auto") {
+      effectiveBreak = applyBreakRules(rules, totalHours);
+    }
+  }
+
 
   const calc = calculateShift({
     startsAt,
