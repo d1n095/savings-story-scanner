@@ -15,6 +15,8 @@ type ProfileLike = {
   on_call_rate?: number | null;
   callout_rate?: number | null;
   ob_rules?: unknown;
+  break_rules?: unknown;
+
 };
 
 export type ComputeInput = {
