@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, Wallet, Sun, MoreHorizontal, Settings, LogOut, Menu, X,
-  CalendarRange, Briefcase, LayoutDashboard, Sparkles,
+  CalendarRange, Briefcase, LayoutDashboard, Sparkles, Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActionFab } from "@/components/action-sheet/ActionSheet";
