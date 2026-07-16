@@ -122,6 +122,210 @@ export type Database = {
         }
         Relationships: []
       }
+      main_ai_approvals: {
+        Row: {
+          action_type: string
+          decided_at: string | null
+          id: string
+          requested_at: string
+          status: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          decided_at?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          decided_at?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "main_ai_approvals_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "main_ai_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      main_ai_audit_events: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          event_data: Json
+          event_type: string
+          id: string
+          task_id: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          event_data?: Json
+          event_type: string
+          id?: string
+          task_id?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          event_data?: Json
+          event_type?: string
+          id?: string
+          task_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "main_ai_audit_events_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "main_ai_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "main_ai_audit_events_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "main_ai_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      main_ai_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      main_ai_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          model: string | null
+          provider: string | null
+          role: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model?: string | null
+          provider?: string | null
+          role: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model?: string | null
+          provider?: string | null
+          role?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "main_ai_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "main_ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      main_ai_tasks: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          requires_approval: boolean
+          risk_level: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          requires_approval?: boolean
+          risk_level?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          requires_approval?: boolean
+          risk_level?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "main_ai_tasks_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "main_ai_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

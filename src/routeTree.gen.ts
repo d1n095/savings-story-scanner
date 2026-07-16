@@ -19,6 +19,7 @@ import { Route as AuthCheckEmailRouteImport } from './routes/auth_.check-email'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
 import { Route as AppPlaneringRouteImport } from './routes/_app/planering'
 import { Route as AppPengarRouteImport } from './routes/_app/pengar'
+import { Route as AppMainAiRouteImport } from './routes/_app/main-ai'
 import { Route as AppKalenderRouteImport } from './routes/_app/kalender'
 import { Route as AppJobbRouteImport } from './routes/_app/jobb'
 import { Route as AppInstallningarRouteImport } from './routes/_app/installningar'
@@ -77,6 +78,11 @@ const AppPlaneringRoute = AppPlaneringRouteImport.update({
 const AppPengarRoute = AppPengarRouteImport.update({
   id: '/pengar',
   path: '/pengar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMainAiRoute = AppMainAiRouteImport.update({
+  id: '/main-ai',
+  path: '/main-ai',
   getParentRoute: () => AppRoute,
 } as any)
 const AppKalenderRoute = AppKalenderRouteImport.update({
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/installningar': typeof AppInstallningarRouteWithChildren
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
+  '/main-ai': typeof AppMainAiRoute
   '/pengar': typeof AppPengarRoute
   '/planering': typeof AppPlaneringRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/insikter': typeof AppInsikterRoute
   '/jobb': typeof AppJobbRoute
   '/kalender': typeof AppKalenderRoute
+  '/main-ai': typeof AppMainAiRoute
   '/pengar': typeof AppPengarRoute
   '/planering': typeof AppPlaneringRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/_app/installningar': typeof AppInstallningarRouteWithChildren
   '/_app/jobb': typeof AppJobbRoute
   '/_app/kalender': typeof AppKalenderRoute
+  '/_app/main-ai': typeof AppMainAiRoute
   '/_app/pengar': typeof AppPengarRoute
   '/_app/planering': typeof AppPlaneringRoute
   '/auth_/callback': typeof AuthCallbackRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/installningar'
     | '/jobb'
     | '/kalender'
+    | '/main-ai'
     | '/pengar'
     | '/planering'
     | '/auth/callback'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/insikter'
     | '/jobb'
     | '/kalender'
+    | '/main-ai'
     | '/pengar'
     | '/planering'
     | '/auth/callback'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/_app/installningar'
     | '/_app/jobb'
     | '/_app/kalender'
+    | '/_app/main-ai'
     | '/_app/pengar'
     | '/_app/planering'
     | '/auth_/callback'
@@ -343,6 +355,13 @@ declare module '@tanstack/react-router' {
       path: '/pengar'
       fullPath: '/pengar'
       preLoaderRoute: typeof AppPengarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/main-ai': {
+      id: '/_app/main-ai'
+      path: '/main-ai'
+      fullPath: '/main-ai'
+      preLoaderRoute: typeof AppMainAiRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/kalender': {
@@ -441,6 +460,7 @@ interface AppRouteChildren {
   AppInstallningarRoute: typeof AppInstallningarRouteWithChildren
   AppJobbRoute: typeof AppJobbRoute
   AppKalenderRoute: typeof AppKalenderRoute
+  AppMainAiRoute: typeof AppMainAiRoute
   AppPengarRoute: typeof AppPengarRoute
   AppPlaneringRoute: typeof AppPlaneringRoute
 }
@@ -453,6 +473,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInstallningarRoute: AppInstallningarRouteWithChildren,
   AppJobbRoute: AppJobbRoute,
   AppKalenderRoute: AppKalenderRoute,
+  AppMainAiRoute: AppMainAiRoute,
   AppPengarRoute: AppPengarRoute,
   AppPlaneringRoute: AppPlaneringRoute,
 }

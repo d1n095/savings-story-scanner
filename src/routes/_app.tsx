@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, Wallet, Sun, MoreHorizontal, Settings, LogOut, Menu, X,
-  CalendarRange, Briefcase, LayoutDashboard, Sparkles,
+  CalendarRange, Briefcase, LayoutDashboard, Sparkles, Brain,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActionFab } from "@/components/action-sheet/ActionSheet";
@@ -26,6 +26,7 @@ const PRIMARY = [
 
 // Bakom "Mer" — finns kvar för djupgående arbete, men skymd från första vyn.
 const SECONDARY = [
+  { to: "/main-ai",   label: "MainAI",      icon: Brain },
   { to: "/insikter",  label: "Insikter",    icon: Sparkles },
   { to: "/planering", label: "Planering",   icon: CalendarRange },
   { to: "/jobb",      label: "Jobb & lön",  icon: Briefcase },
