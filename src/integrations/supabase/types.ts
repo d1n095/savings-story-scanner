@@ -291,12 +291,16 @@ export type Database = {
           notes: string | null
           ob_amount: number | null
           on_call_hours: number | null
+          original_import_snapshot: Json | null
+          pay_snapshot: Json | null
           shift_type: Database["public"]["Enums"]["shift_type"]
+          snapshot_frozen_at: string | null
           starts_at: string
           title: string | null
           total_amount: number | null
           updated_at: string
           user_id: string
+          verification_status: Database["public"]["Enums"]["shift_verification_status"]
           work_profile_id: string | null
         }
         Insert: {
@@ -311,12 +315,16 @@ export type Database = {
           notes?: string | null
           ob_amount?: number | null
           on_call_hours?: number | null
+          original_import_snapshot?: Json | null
+          pay_snapshot?: Json | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
+          snapshot_frozen_at?: string | null
           starts_at: string
           title?: string | null
           total_amount?: number | null
           updated_at?: string
           user_id: string
+          verification_status?: Database["public"]["Enums"]["shift_verification_status"]
           work_profile_id?: string | null
         }
         Update: {
@@ -331,12 +339,16 @@ export type Database = {
           notes?: string | null
           ob_amount?: number | null
           on_call_hours?: number | null
+          original_import_snapshot?: Json | null
+          pay_snapshot?: Json | null
           shift_type?: Database["public"]["Enums"]["shift_type"]
+          snapshot_frozen_at?: string | null
           starts_at?: string
           title?: string | null
           total_amount?: number | null
           updated_at?: string
           user_id?: string
+          verification_status?: Database["public"]["Enums"]["shift_verification_status"]
           work_profile_id?: string | null
         }
         Relationships: [
@@ -749,6 +761,11 @@ export type Database = {
         | "overforing"
         | "annat"
       shift_type: "regular" | "waking_on_call" | "sleeping_on_call" | "standby"
+      shift_verification_status:
+        | "unverified"
+        | "pending_review"
+        | "verified"
+        | "manual_override"
       signal_severity: "info" | "warning" | "critical"
       timeline_kind:
         | "shift"
@@ -905,6 +922,12 @@ export const Constants = {
         "annat",
       ],
       shift_type: ["regular", "waking_on_call", "sleeping_on_call", "standby"],
+      shift_verification_status: [
+        "unverified",
+        "pending_review",
+        "verified",
+        "manual_override",
+      ],
       signal_severity: ["info", "warning", "critical"],
       timeline_kind: [
         "shift",
