@@ -26,6 +26,7 @@ const PRIMARY = [
 
 // Bakom "Mer" — finns kvar för djupgående arbete, men skymd från första vyn.
 const SECONDARY = [
+  { to: "/main-ai",   label: "MainAI",      icon: Brain },
   { to: "/insikter",  label: "Insikter",    icon: Sparkles },
   { to: "/planering", label: "Planering",   icon: CalendarRange },
   { to: "/jobb",      label: "Jobb & lön",  icon: Briefcase },
