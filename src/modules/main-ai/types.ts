@@ -43,7 +43,7 @@ export type AuditEvent = {
   conversation_id: string | null;
   task_id: string | null;
   event_type: string;
-  event_data: Record<string, unknown>;
+  event_data: unknown;
   created_at: string;
 };
 
