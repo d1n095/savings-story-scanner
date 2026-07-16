@@ -37,13 +37,21 @@ export type Task = {
   updated_at: string;
 };
 
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [k: string]: JsonValue };
+
 export type AuditEvent = {
   id: string;
   user_id: string;
   conversation_id: string | null;
   task_id: string | null;
   event_type: string;
-  event_data: unknown;
+  event_data: JsonValue;
   created_at: string;
 };
 
