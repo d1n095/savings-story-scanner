@@ -419,7 +419,7 @@ export const updateTask = createServerFn({ method: "POST" })
     if (data.riskLevel !== undefined) patch.risk_level = data.riskLevel;
     if (data.requiresApproval !== undefined) patch.requires_approval = data.requiresApproval;
 
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await (context.supabase as any)
       .from("main_ai_tasks")
       .update(patch)
       .eq("id", data.id!)
