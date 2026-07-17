@@ -479,7 +479,6 @@ export const decideApproval = createServerFn({ method: "POST" })
       .update({
         status: data.decision,
         decided_at: new Date().toISOString(),
-        decision_reason: data.reason,
       })
       .eq("id", data.id)
       .select("*")
