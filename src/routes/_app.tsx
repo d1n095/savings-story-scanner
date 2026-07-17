@@ -200,15 +200,22 @@ function AppLayout() {
       </header>
 
       <main className="min-w-0 flex-1">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 pb-28 sm:px-6 lg:py-10">
+        <div
+          className={cn(
+            "mx-auto w-full",
+            path.startsWith("/main-ai")
+              ? "flex h-[calc(100dvh-56px)] max-w-none flex-col px-0 lg:h-dvh"
+              : "max-w-6xl px-4 py-6 pb-28 sm:px-6 lg:py-10",
+          )}
+        >
           <Outlet />
         </div>
       </main>
 
       {open && <div onClick={() => setOpen(false)} className="fixed inset-0 z-30 bg-black/40 lg:hidden" />}
 
-      {/* Global "Vad vill du göra?"-knapp */}
-      <ActionFab />
+      {/* Global "Vad vill du göra?"-knapp — dold på MainAI där den skulle täcka chatten */}
+      {!path.startsWith("/main-ai") && <ActionFab />}
     </div>
   );
 }
