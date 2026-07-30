@@ -81,7 +81,7 @@ function AppLayout() {
 
   const owner = moduleForPath(lifeStoreCatalog, path);
   const blockedModule =
-    owner && allowed && !modulesLoading && !allowed.has(path.replace(/\/$/, ""))
+    owner && allowed && !modulesLoading && !owner.routes.some((r) => allowed.has(r.path))
       ? owner
       : null;
 
