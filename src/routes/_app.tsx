@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActionFab } from "@/components/action-sheet/ActionSheet";
+import { useModuleViews } from "@/hooks/use-modules";
+import { lifeStoreCatalog } from "@/platform";
+import { accessiblePaths, moduleForPath } from "@/platform/module-state";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: async () => {
@@ -62,8 +65,28 @@ function AppLayout() {
     router.navigate({ to: "/auth" });
   }
 
+  // Navigation och åtkomst läses ur samma persisterade modultillstånd som Life Store.
+  const { data: moduleViews, isLoading: modulesLoading } = useModuleViews();
+  const allowed = moduleViews ? accessiblePaths(moduleViews) : null;
+
+  function moduleVisible(to: string): boolean {
+    if (!allowed) return true; // under laddning döljs ingenting
+    const owner = moduleForPath(lifeStoreCatalog, to);
+    if (!owner) return true; // skalets egna vyer
+    return allowed.has(to);
+  }
+
+  const primary = PRIMARY.filter((i) => moduleVisible(i.to));
+  const secondary = SECONDARY.filter((i) => moduleVisible(i.to));
+
+  const owner = moduleForPath(lifeStoreCatalog, path);
+  const blockedModule =
+    owner && allowed && !modulesLoading && !allowed.has(path.replace(/\/$/, ""))
+      ? owner
+      : null;
+
   const initial = (email?.[0] || "U").toUpperCase();
-  const inSecondary = SECONDARY.some((s) => path.startsWith(s.to));
+  const inSecondary = secondary.some((s) => path.startsWith(s.to));
 
   return (
     <div className="min-h-screen lg:flex">
@@ -86,7 +109,7 @@ function AppLayout() {
           </Link>
 
           <nav className="flex-1 space-y-1 px-3">
-            {PRIMARY.map((item) => {
+            {primary.map((item) => {
               const active = path.startsWith(item.to);
               const Icon = item.icon;
               return (
@@ -125,7 +148,7 @@ function AppLayout() {
               </button>
               {moreOpen && (
                 <div className="ml-7 mt-1 space-y-0.5 border-l border-border pl-2">
-                  {SECONDARY.map((item) => {
+                  {secondary.map((item) => {
                     const active = path.startsWith(item.to);
                     const Icon = item.icon;
                     return (
@@ -209,7 +232,23 @@ function AppLayout() {
               : "max-w-6xl px-4 py-6 pb-28 sm:px-6 lg:py-10",
           )}
         >
-          <Outlet />
+          {blockedModule ? (
+            <div className="mx-auto max-w-lg rounded-3xl border border-border p-8 text-center">
+              <div className="display text-2xl">{blockedModule.name} är avstängd</div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Modulen är inaktiverad eller avinstallerad. Din data finns kvar och återkommer så
+                fort du aktiverar modulen igen.
+              </p>
+              <Link
+                to="/tillagg"
+                className="mt-5 inline-flex rounded-full bg-[oklch(0.85_0.12_85/0.16)] px-4 py-2 text-xs text-[oklch(0.85_0.12_85)]"
+              >
+                Öppna Tillägg
+              </Link>
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </div>
       </main>
 
