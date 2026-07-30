@@ -108,7 +108,6 @@ export function plannedFromDate<T extends TrainingSession>(sessions: T[], fromDa
     );
 }
 
-
 export function recentCompleted<T extends TrainingSession>(sessions: T[], limit = 5): T[] {
   return sessions
     .filter((s) => s.status === "completed")

@@ -24,7 +24,6 @@ import { sessionDistanceKm, sessionSetCount, sessionVolumeKg } from "../summary"
 import { SESSION_STATUS_LABEL, type SessionDetail } from "../types";
 import { ConfirmDelete } from "./ConfirmDelete";
 import {
-
   ExerciseLogEditor,
   draftFromSession,
   toLoggedExercises,
@@ -202,7 +201,6 @@ export function TrainingHistoryView() {
                       </Button>
                     }
                   />
-
                 </div>
               </div>
 

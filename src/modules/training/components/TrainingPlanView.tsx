@@ -36,7 +36,6 @@ import { ConfirmDelete } from "./ConfirmDelete";
 import { LogSessionDialog } from "./LogSessionDialog";
 import { ScheduleSessionDialog } from "./ScheduleSessionDialog";
 
-
 function num(value: string): number | null {
   const t = value.trim().replace(",", ".");
   if (!t) return null;
@@ -280,7 +279,6 @@ export function TrainingPlanView() {
                       </Button>
                     }
                   />
-
                 </div>
               </div>
 
@@ -318,7 +316,6 @@ export function TrainingPlanView() {
                             </Button>
                           }
                         />
-
                       </li>
                     ))}
                 </ul>

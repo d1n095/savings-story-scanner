@@ -169,7 +169,6 @@ describe("beräkningar", () => {
     expect(plannedFromDate(list, "2026-08-01").map((s) => s.id)).toEqual(["b"]);
   });
 
-
   it("formaterar datum som ISO-dag", () => {
     expect(isoDate(new Date("2026-07-30T22:15:00Z"))).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
