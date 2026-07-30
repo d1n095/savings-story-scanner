@@ -4,8 +4,6 @@ import {
   createModuleRuntime,
   defineLifeModule,
   isApiCompatible,
-  lifeStoreCatalog,
-  preinstalledModules,
   satisfiesCaret,
   validateLifeModuleManifest,
   workModule,
@@ -15,6 +13,7 @@ import {
   type InstalledModule,
   type LifeModuleManifest,
 } from "@/platform";
+import { lifeStoreCatalog, preinstalledModules } from "@/modules/catalog";
 
 const NOW = new Date("2026-07-30T12:00:00.000Z");
 

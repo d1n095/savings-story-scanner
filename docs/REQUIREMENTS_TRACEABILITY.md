@@ -27,6 +27,8 @@ tester → verifieringsstatus. Rader utan test eller verifiering är **inte** kl
 | R-PLAT-5 | Installationstillstånd persisteras per användare med RLS | core | `src/services/module-service.ts`, `src/platform/module-state.ts`, `src/hooks/use-modules.ts` | `module_installations` | `module-service.test.ts` | Verifierad |
 | R-PLAT-6 | Navigation och routeåtkomst följer aktiverade moduler | core | `src/routes/_app.tsx`, `src/platform/module-state.ts` | `module_installations` | `module-state.test.ts` | Verifierad |
 | R-PLAT-7 | Modulåtgärder är spårbara i en auditlogg | core | `src/services/module-service.ts`, `src/routes/_app/tillagg.tsx` | `module_audit_events` | `module-service.test.ts` | Verifierad |
+| R-MOD-1 | Planering är extraherad som första riktiga Life Module | modules/planning | `src/modules/planning/module.ts`, `index.ts`, `components/PlanningView.tsx`, `components/InsightsView.tsx`, `src/modules/catalog.ts` | `shifts`, `absences` (RLS) | `src/modules/planning/__tests__/module.test.ts` | Verifierad |
+| R-MOD-2 | Route-filer för moduler innehåller ingen affärslogik | core/shell | `src/routes/_app/planering.tsx`, `src/routes/_app/insikter.tsx` | — | `src/modules/planning/__tests__/module.test.ts` | Verifierad |
 | R-GOV-1 | Projektet har ett permanent styrsystem | governance | `/AGENTS.md`, `docs/PRODUCT_BLUEPRINT.md`, `docs/MODULE_STANDARD.md`, `docs/DEFINITION_OF_DONE.md`, `docs/CURRENT_STATE.md`, `docs/DECISIONS.md`, denna fil | — | — | Verifierad (dokumentation) |
 | R-AI-1 | MainAI-prototypen byggs inte ut | governance | `src/routes/_app/main-ai.tsx` | `main_ai_*` | — | Prototyp (fryst) |
 

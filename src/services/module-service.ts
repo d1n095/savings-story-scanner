@@ -7,12 +7,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Permission } from "@/platform";
-import {
-  lifeStoreCatalog,
-  preinstalledModules,
-  requestedPermissions,
-  type LifeModuleManifest,
-} from "@/platform";
+import { requestedPermissions, type LifeModuleManifest } from "@/platform";
+import { lifeStoreCatalog, preinstalledModules } from "@/modules/catalog";
 import {
   canDisable,
   canInstall,

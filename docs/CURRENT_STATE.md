@@ -14,7 +14,7 @@
 | Löneberäkning: bas, OB, raster | `src/modules/salary/compute.ts`, `ob.ts`, `breaks.ts` | Fungerar, avstämning pågår |
 | Schemaimport via bild (OCR) | `src/lib/schedule-ocr.functions.ts`, `/importera` | Fungerar, extern modell |
 | Kalenderkällor, helgdagar, namnsdagar | `src/modules/calendar/*` | Fungerar |
-| Planering: rotationer, skatt, semester | `src/modules/planning/*` | Delvis |
+| Planering: rotationer, skatt, semester (första riktiga Life Module) | `src/modules/planning/*` (manifest, index, components) | Verifierad struktur, delvis funktionalitet |
 | Ekonomi-score | `src/modules/finance/score.ts` | Delvis |
 | Plattformskontrakt, register, runtime | `src/platform/*` | Inert, testat |
 | Life Store (läsvy) | `src/routes/_app/tillagg.tsx` | Endast läsning |

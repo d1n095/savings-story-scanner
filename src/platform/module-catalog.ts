@@ -86,32 +86,6 @@ export const financeModule = defineLifeModule({
   standalone: { enabled: true, entryPoint: "modules/finance/standalone" },
 });
 
-export const planningModule = defineLifeModule({
-  id: "planning",
-  name: "Planering",
-  version: "1.0.0",
-  apiVersion: api,
-  description: "Rotationer, semester, skatt och framtidsvyer.",
-  publisher: "LifeApp",
-  firstParty: true,
-  pricing: { kind: "first-party" },
-  routes: [
-    { path: "/planering", label: "Planering", requiresAuth: true },
-    { path: "/insikter", label: "Insikter", requiresAuth: true },
-  ],
-  capabilities: ["read", "compute", "schedule"],
-  permissions: [
-    { permission: "planning:read", reason: "Visa planering och prognoser.", required: true },
-    { permission: "shifts:read", reason: "Bygga prognoser på dina pass.", required: false },
-  ],
-  dependencies: [{ moduleId: "work", range: "^1.0.0", optional: true }],
-  eventsPublished: [],
-  eventsConsumed: ["shift.created", "salary.computed"],
-  commandsSupported: [],
-  estimatedStorageKb: 120,
-  standalone: { enabled: false },
-});
-
 /** Moduler som ännu inte är byggda. Visas som "Tillgängliga" i Life Store. */
 export const upcomingModules: LifeModuleManifest[] = [
   defineLifeModule({
@@ -219,7 +193,11 @@ export const upcomingModules: LifeModuleManifest[] = [
     permissions: [
       { permission: "commerce:read", reason: "Visa produkter och order.", required: true },
       { permission: "commerce:write", reason: "Hantera produkter och order.", required: true },
-      { permission: "finance:read", reason: "Koppla försäljning till din ekonomi.", required: false },
+      {
+        permission: "finance:read",
+        reason: "Koppla försäljning till din ekonomi.",
+        required: false,
+      },
     ],
     dependencies: [{ moduleId: "finance", range: "^1.0.0", optional: true }],
     eventsPublished: ["commerce.order.created", "commerce.product.updated"],
@@ -242,7 +220,11 @@ export const upcomingModules: LifeModuleManifest[] = [
     permissions: [
       { permission: "recipes:read", reason: "Visa dina recept.", required: true },
       { permission: "recipes:write", reason: "Spara recept och menyer.", required: true },
-      { permission: "shopping:write", reason: "Skicka ingredienser till inköpslistan.", required: false },
+      {
+        permission: "shopping:write",
+        reason: "Skicka ingredienser till inköpslistan.",
+        required: false,
+      },
     ],
     dependencies: [{ moduleId: "shopping", range: "^0.1.0", optional: true }],
     eventsPublished: ["recipes.menu.planned"],
@@ -253,15 +235,13 @@ export const upcomingModules: LifeModuleManifest[] = [
   }),
 ];
 
-/** Moduler som följer med LifeApp idag. */
-export const preinstalledModules: LifeModuleManifest[] = [
+/**
+ * Kärnmoduler vars manifest ännu bor i plattformslagret. Moduler som har
+ * flyttats till `src/modules/<modul>/module.ts` (Planering först) läggs till
+ * i `src/modules/catalog.ts` — plattformen får aldrig importera en modul.
+ */
+export const corePreinstalledModules: LifeModuleManifest[] = [
   calendarModule,
   workModule,
   financeModule,
-  planningModule,
-];
-
-export const lifeStoreCatalog: LifeModuleManifest[] = [
-  ...preinstalledModules,
-  ...upcomingModules,
 ];

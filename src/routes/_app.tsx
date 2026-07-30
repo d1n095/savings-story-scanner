@@ -27,7 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ActionFab } from "@/components/action-sheet/ActionSheet";
 import { useModuleViews } from "@/hooks/use-modules";
-import { lifeStoreCatalog } from "@/platform";
+import { lifeStoreCatalog } from "@/modules/catalog";
 import { accessiblePaths, moduleForPath } from "@/platform/module-state";
 
 export const Route = createFileRoute("/_app")({
