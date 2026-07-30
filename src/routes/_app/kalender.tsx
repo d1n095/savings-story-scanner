@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { buildDayIndex, isoDateLocal, KIND_META, type DaySummary, type EventKind, type DayEvent } from "@/modules/calendar/source";
 import { calculateShift, DEFAULT_OB_RULES, type OBRule } from "@/modules/salary/ob";
+import { useCalendarContributions } from "@/hooks/use-calendar-contributions";
 import { sek, num } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -94,11 +95,18 @@ function KalenderPage() {
     },
   });
 
+  // Modulbidrag (t.ex. Träning) via kalenderkontraktet — inte direkta tabellläsningar.
+  const contributions = useCalendarContributions({
+    startDate: isoDateLocal(gridStart),
+    endDate: isoDateLocal(gridEnd),
+  });
+
   const dayIndex = useMemo(() => buildDayIndex(gridStart, gridEnd, {
     shifts: shifts.data as any, expenses: expenses.data as any,
     reminders: reminders.data as any, absences: absences.data as any,
     timeline: timeline.data as any,
-  }), [gridStart, gridEnd, shifts.data, expenses.data, reminders.data, absences.data, timeline.data]);
+    contributions: contributions.data ?? [],
+  }), [gridStart, gridEnd, shifts.data, expenses.data, reminders.data, absences.data, timeline.data, contributions.data]);
 
   // Auto-scroll till idag första gången
   useEffect(() => {
@@ -120,6 +128,7 @@ function KalenderPage() {
     qc.invalidateQueries({ queryKey: ["cal-absences"] });
     qc.invalidateQueries({ queryKey: ["cal-timeline"] });
     qc.invalidateQueries({ queryKey: ["shifts"] });
+    qc.invalidateQueries({ queryKey: ["calendar", "module-contributions"] });
   };
 
   return (
@@ -148,7 +157,7 @@ function KalenderPage() {
 
       {/* Legend */}
       <div className="glass flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl px-4 py-2 text-[11px] text-muted-foreground">
-        {(["shift","income","expense","reminder","absence","holiday","nameday"] as EventKind[]).map(k => (
+        {(["shift","income","expense","reminder","absence","holiday","nameday","module"] as EventKind[]).map(k => (
           <span key={k} className="inline-flex items-center gap-1.5">
             <span className={cn("h-2 w-2 rounded-full", KIND_META[k].dot)} /> {KIND_META[k].label}
           </span>
