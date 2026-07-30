@@ -17,6 +17,7 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth_.forgot-pa
 import { Route as AuthConfirmedRouteImport } from './routes/auth_.confirmed'
 import { Route as AuthCheckEmailRouteImport } from './routes/auth_.check-email'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
+import { Route as AppTraningRouteImport } from './routes/_app/traning'
 import { Route as AppTillaggRouteImport } from './routes/_app/tillagg'
 import { Route as AppPlaneringRouteImport } from './routes/_app/planering'
 import { Route as AppPengarRouteImport } from './routes/_app/pengar'
@@ -29,6 +30,8 @@ import { Route as AppImporteraRouteImport } from './routes/_app/importera'
 import { Route as AppIdagRouteImport } from './routes/_app/idag'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppInstallningarIndexRouteImport } from './routes/_app/installningar.index'
+import { Route as AppTraningPassRouteImport } from './routes/_app/traning.pass'
+import { Route as AppTraningHistorikRouteImport } from './routes/_app/traning.historik'
 import { Route as AppInstallningarProfilOchReglerRouteImport } from './routes/_app/installningar.profil-och-regler'
 import { Route as AppInstallningarLonArbeteRouteImport } from './routes/_app/installningar.lon-arbete'
 
@@ -70,6 +73,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth_/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppTraningRoute = AppTraningRouteImport.update({
+  id: '/traning',
+  path: '/traning',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppTillaggRoute = AppTillaggRouteImport.update({
   id: '/tillagg',
@@ -131,6 +139,16 @@ const AppInstallningarIndexRoute = AppInstallningarIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppInstallningarRoute,
 } as any)
+const AppTraningPassRoute = AppTraningPassRouteImport.update({
+  id: '/pass',
+  path: '/pass',
+  getParentRoute: () => AppTraningRoute,
+} as any)
+const AppTraningHistorikRoute = AppTraningHistorikRouteImport.update({
+  id: '/historik',
+  path: '/historik',
+  getParentRoute: () => AppTraningRoute,
+} as any)
 const AppInstallningarProfilOchReglerRoute =
   AppInstallningarProfilOchReglerRouteImport.update({
     id: '/profil-och-regler',
@@ -158,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/pengar': typeof AppPengarRoute
   '/planering': typeof AppPlaneringRoute
   '/tillagg': typeof AppTillaggRoute
+  '/traning': typeof AppTraningRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/check-email': typeof AuthCheckEmailRoute
   '/auth/confirmed': typeof AuthConfirmedRoute
@@ -165,6 +184,8 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
   '/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
+  '/traning/historik': typeof AppTraningHistorikRoute
+  '/traning/pass': typeof AppTraningPassRoute
   '/installningar/': typeof AppInstallningarIndexRoute
 }
 export interface FileRoutesByTo {
@@ -180,6 +201,7 @@ export interface FileRoutesByTo {
   '/pengar': typeof AppPengarRoute
   '/planering': typeof AppPlaneringRoute
   '/tillagg': typeof AppTillaggRoute
+  '/traning': typeof AppTraningRouteWithChildren
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/check-email': typeof AuthCheckEmailRoute
   '/auth/confirmed': typeof AuthConfirmedRoute
@@ -187,6 +209,8 @@ export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
   '/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
+  '/traning/historik': typeof AppTraningHistorikRoute
+  '/traning/pass': typeof AppTraningPassRoute
   '/installningar': typeof AppInstallningarIndexRoute
 }
 export interface FileRoutesById {
@@ -205,6 +229,7 @@ export interface FileRoutesById {
   '/_app/pengar': typeof AppPengarRoute
   '/_app/planering': typeof AppPlaneringRoute
   '/_app/tillagg': typeof AppTillaggRoute
+  '/_app/traning': typeof AppTraningRouteWithChildren
   '/auth_/callback': typeof AuthCallbackRoute
   '/auth_/check-email': typeof AuthCheckEmailRoute
   '/auth_/confirmed': typeof AuthConfirmedRoute
@@ -212,6 +237,8 @@ export interface FileRoutesById {
   '/auth_/reset-password': typeof AuthResetPasswordRoute
   '/_app/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
   '/_app/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
+  '/_app/traning/historik': typeof AppTraningHistorikRoute
+  '/_app/traning/pass': typeof AppTraningPassRoute
   '/_app/installningar/': typeof AppInstallningarIndexRoute
 }
 export interface FileRouteTypes {
@@ -230,6 +257,7 @@ export interface FileRouteTypes {
     | '/pengar'
     | '/planering'
     | '/tillagg'
+    | '/traning'
     | '/auth/callback'
     | '/auth/check-email'
     | '/auth/confirmed'
@@ -237,6 +265,8 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/installningar/lon-arbete'
     | '/installningar/profil-och-regler'
+    | '/traning/historik'
+    | '/traning/pass'
     | '/installningar/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -252,6 +282,7 @@ export interface FileRouteTypes {
     | '/pengar'
     | '/planering'
     | '/tillagg'
+    | '/traning'
     | '/auth/callback'
     | '/auth/check-email'
     | '/auth/confirmed'
@@ -259,6 +290,8 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/installningar/lon-arbete'
     | '/installningar/profil-och-regler'
+    | '/traning/historik'
+    | '/traning/pass'
     | '/installningar'
   id:
     | '__root__'
@@ -276,6 +309,7 @@ export interface FileRouteTypes {
     | '/_app/pengar'
     | '/_app/planering'
     | '/_app/tillagg'
+    | '/_app/traning'
     | '/auth_/callback'
     | '/auth_/check-email'
     | '/auth_/confirmed'
@@ -283,6 +317,8 @@ export interface FileRouteTypes {
     | '/auth_/reset-password'
     | '/_app/installningar/lon-arbete'
     | '/_app/installningar/profil-och-regler'
+    | '/_app/traning/historik'
+    | '/_app/traning/pass'
     | '/_app/installningar/'
   fileRoutesById: FileRoutesById
 }
@@ -354,6 +390,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/traning': {
+      id: '/_app/traning'
+      path: '/traning'
+      fullPath: '/traning'
+      preLoaderRoute: typeof AppTraningRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/tillagg': {
       id: '/_app/tillagg'
@@ -439,6 +482,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppInstallningarIndexRouteImport
       parentRoute: typeof AppInstallningarRoute
     }
+    '/_app/traning/pass': {
+      id: '/_app/traning/pass'
+      path: '/pass'
+      fullPath: '/traning/pass'
+      preLoaderRoute: typeof AppTraningPassRouteImport
+      parentRoute: typeof AppTraningRoute
+    }
+    '/_app/traning/historik': {
+      id: '/_app/traning/historik'
+      path: '/historik'
+      fullPath: '/traning/historik'
+      preLoaderRoute: typeof AppTraningHistorikRouteImport
+      parentRoute: typeof AppTraningRoute
+    }
     '/_app/installningar/profil-och-regler': {
       id: '/_app/installningar/profil-och-regler'
       path: '/profil-och-regler'
@@ -471,6 +528,20 @@ const AppInstallningarRouteChildren: AppInstallningarRouteChildren = {
 const AppInstallningarRouteWithChildren =
   AppInstallningarRoute._addFileChildren(AppInstallningarRouteChildren)
 
+interface AppTraningRouteChildren {
+  AppTraningHistorikRoute: typeof AppTraningHistorikRoute
+  AppTraningPassRoute: typeof AppTraningPassRoute
+}
+
+const AppTraningRouteChildren: AppTraningRouteChildren = {
+  AppTraningHistorikRoute: AppTraningHistorikRoute,
+  AppTraningPassRoute: AppTraningPassRoute,
+}
+
+const AppTraningRouteWithChildren = AppTraningRoute._addFileChildren(
+  AppTraningRouteChildren,
+)
+
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppIdagRoute: typeof AppIdagRoute
@@ -483,6 +554,7 @@ interface AppRouteChildren {
   AppPengarRoute: typeof AppPengarRoute
   AppPlaneringRoute: typeof AppPlaneringRoute
   AppTillaggRoute: typeof AppTillaggRoute
+  AppTraningRoute: typeof AppTraningRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -497,6 +569,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPengarRoute: AppPengarRoute,
   AppPlaneringRoute: AppPlaneringRoute,
   AppTillaggRoute: AppTillaggRoute,
+  AppTraningRoute: AppTraningRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
