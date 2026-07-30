@@ -22,12 +22,15 @@ const platformFiles = allFiles.filter((f) => f.includes(`${join("src", "platform
 const otherFiles = allFiles.filter((f) => !platformFiles.includes(f));
 
 describe("Isolering av plattformslagret", () => {
-  it("ingen befintlig fil importerar src/platform", () => {
-    const offenders = otherFiles.filter((f) =>
-      /from\s+["'](@\/platform|.*\/platform\/)/.test(readFileSync(f, "utf8")),
-    );
+  it("bara godkända skal-filer importerar src/platform", () => {
+    // Life Store-vyn är den enda konsumenten tills modulmigreringen påbörjas.
+    const allowed = [join("routes", "_app", "tillagg.tsx")];
+    const offenders = otherFiles
+      .filter((f) => !allowed.some((a) => f.endsWith(a)))
+      .filter((f) => /from\s+["'](@\/platform|.*\/platform\/)/.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
   });
+
 
   it("src/platform importerar varken databas, UI eller affärsmoduler", () => {
     const forbidden = /from\s+["'][^"']*(integrations\/supabase|@\/components|@\/modules|@\/routes|@tanstack)/;
