@@ -69,7 +69,13 @@ describe("tillstånd utan persisterade rader", () => {
 describe("installation", () => {
   it("installation av en tillgänglig modul tillåts", () => {
     const m = find("health");
-    const check = canInstall(m, lifeStoreCatalog, [], PRE, m.permissions.map((p) => p.permission));
+    const check = canInstall(
+      m,
+      lifeStoreCatalog,
+      [],
+      PRE,
+      m.permissions.map((p) => p.permission),
+    );
     expect(check.ok).toBe(true);
   });
 
@@ -189,11 +195,7 @@ describe("navigation och routeskydd", () => {
   });
 
   it("inaktiverad modul försvinner ur navigationen", () => {
-    const views = resolveModuleViews(
-      lifeStoreCatalog,
-      [row("finance", { enabled: false })],
-      PRE,
-    );
+    const views = resolveModuleViews(lifeStoreCatalog, [row("finance", { enabled: false })], PRE);
     expect(navigableRoutes(views).map((r) => r.path)).not.toContain("/pengar");
   });
 

@@ -149,8 +149,7 @@ export function resolveModuleView(
     return { ...base, state: "blocked", message: blocked };
 
   if (!record) return { ...base, state: "available" };
-  if (!record.enabled)
-    return { ...base, state: "disabled", message: "Modulen är inaktiverad." };
+  if (!record.enabled) return { ...base, state: "disabled", message: "Modulen är inaktiverad." };
 
   return { ...base, state: "enabled" };
 }
@@ -198,7 +197,10 @@ export function moduleForPath(
   let matchLength = -1;
   for (const m of catalog)
     for (const r of m.routes)
-      if ((pathname === r.path || pathname.startsWith(`${r.path}/`)) && r.path.length > matchLength) {
+      if (
+        (pathname === r.path || pathname.startsWith(`${r.path}/`)) &&
+        r.path.length > matchLength
+      ) {
         match = m;
         matchLength = r.path.length;
       }
@@ -259,9 +261,6 @@ export function canUninstall(manifest: LifeModuleManifest): LifecycleCheck {
 
 export function canDisable(manifest: LifeModuleManifest): LifecycleCheck {
   if (isRequiredModule(manifest.id))
-    return nope(
-      "required_module",
-      `${manifest.name} är en kärnmodul och kan inte stängas av.`,
-    );
+    return nope("required_module", `${manifest.name} är en kärnmodul och kan inte stängas av.`);
   return ok;
 }

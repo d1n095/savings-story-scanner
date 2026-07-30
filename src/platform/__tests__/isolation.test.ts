@@ -37,9 +37,9 @@ describe("Isolering av plattformslagret", () => {
     expect(offenders).toEqual([]);
   });
 
-
   it("src/platform importerar varken databas, UI eller affärsmoduler", () => {
-    const forbidden = /from\s+["'][^"']*(integrations\/supabase|@\/components|@\/modules|@\/routes|@tanstack)/;
+    const forbidden =
+      /from\s+["'][^"']*(integrations\/supabase|@\/components|@\/modules|@\/routes|@tanstack)/;
     const offenders = platformFiles.filter((f) => forbidden.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
   });

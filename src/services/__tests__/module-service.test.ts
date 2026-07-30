@@ -22,8 +22,7 @@ function tableApi(table: string) {
       }),
     };
   }
-  const err = (op: string) =>
-    state.failNext === op ? { message: "network down" } : null;
+  const err = (op: string) => (state.failNext === op ? { message: "network down" } : null);
 
   return {
     select: () => {

@@ -60,7 +60,11 @@ function toRecord(row: Row): ModuleInstallationRecord {
     moduleId: row.module_id,
     version: row.version,
     status:
-      row.status === "failed" ? "failed" : row.status === "uninstalled" ? "uninstalled" : "installed",
+      row.status === "failed"
+        ? "failed"
+        : row.status === "uninstalled"
+          ? "uninstalled"
+          : "installed",
     enabled: row.enabled,
     grantedPermissions: (row.granted_permissions ?? []) as Permission[],
     settings: (row.settings as Record<string, unknown>) ?? {},
@@ -93,8 +97,11 @@ export async function listInstallations(): Promise<ServiceResult<ModuleInstallat
   if (!userId) return fail("unauthorized", "Du måste vara inloggad för att hantera moduler.");
   const { data, error } = await supabase
     .from("module_installations")
-    .select("module_id, version, status, enabled, granted_permissions, settings, failure_reason, installed_at, updated_at");
-  if (error) return fail("persistence_failed", `Kunde inte läsa modultillståndet: ${error.message}`);
+    .select(
+      "module_id, version, status, enabled, granted_permissions, settings, failure_reason, installed_at, updated_at",
+    );
+  if (error)
+    return fail("persistence_failed", `Kunde inte läsa modultillståndet: ${error.message}`);
   return { ok: true, value: (data as Row[]).map(toRecord) };
 }
 
@@ -167,12 +174,17 @@ export async function installModule(
       enabled: true,
       granted_permissions: granted,
     })
-    .select("module_id, version, status, enabled, granted_permissions, settings, failure_reason, installed_at, updated_at")
+    .select(
+      "module_id, version, status, enabled, granted_permissions, settings, failure_reason, installed_at, updated_at",
+    )
     .single();
 
   if (error || !data) {
     await audit(userId, moduleId, "install", false, error?.message);
-    return fail("persistence_failed", `Installationen kunde inte sparas: ${error?.message ?? "okänt fel"}`);
+    return fail(
+      "persistence_failed",
+      `Installationen kunde inte sparas: ${error?.message ?? "okänt fel"}`,
+    );
   }
   await audit(userId, moduleId, "install", true, `v${manifest.version}`);
   return { ok: true, value: toRecord(data as Row) };
@@ -199,9 +211,7 @@ async function setEnabled(
 
   const existing = await listInstallations();
   if (!existing.ok) return existing;
-  const hasRow = existing.value.some(
-    (r) => r.moduleId === moduleId && r.status !== "uninstalled",
-  );
+  const hasRow = existing.value.some((r) => r.moduleId === moduleId && r.status !== "uninstalled");
 
   const tombstoned = existing.value.some(
     (r) => r.moduleId === moduleId && r.status === "uninstalled",
@@ -237,12 +247,17 @@ async function setEnabled(
       },
       { onConflict: "user_id,module_id" },
     )
-    .select("module_id, version, status, enabled, granted_permissions, settings, failure_reason, installed_at, updated_at")
+    .select(
+      "module_id, version, status, enabled, granted_permissions, settings, failure_reason, installed_at, updated_at",
+    )
     .single();
 
   if (error || !data) {
     await audit(userId, moduleId, action, false, error?.message);
-    return fail("persistence_failed", `Ändringen kunde inte sparas: ${error?.message ?? "okänt fel"}`);
+    return fail(
+      "persistence_failed",
+      `Ändringen kunde inte sparas: ${error?.message ?? "okänt fel"}`,
+    );
   }
   await audit(userId, moduleId, action, true);
   return { ok: true, value: toRecord(data as Row) };

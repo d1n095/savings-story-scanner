@@ -1,8 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
-  Blocks, Check, Lock, ShieldCheck, HardDrive, Package, Sparkles, CircleSlash,
-  AlertTriangle, Loader2, Power, PowerOff, Trash2, RefreshCw, History,
+  Blocks,
+  Check,
+  Lock,
+  ShieldCheck,
+  HardDrive,
+  Package,
+  Sparkles,
+  CircleSlash,
+  AlertTriangle,
+  Loader2,
+  Power,
+  PowerOff,
+  Trash2,
+  RefreshCw,
+  History,
 } from "lucide-react";
 import { isApiCompatible, LIFEAPP_API_VERSION, type LifeModuleManifest } from "@/platform";
 import type { ModuleUiState, ModuleView } from "@/platform/module-state";
@@ -12,9 +25,15 @@ export const Route = createFileRoute("/_app/tillagg")({
   head: () => ({
     meta: [
       { title: "Life Store — tillägg och moduler" },
-      { name: "description", content: "Installera, aktivera och granska LifeApp-moduler och deras behörigheter." },
+      {
+        name: "description",
+        content: "Installera, aktivera och granska LifeApp-moduler och deras behörigheter.",
+      },
       { property: "og:title", content: "Life Store — tillägg och moduler" },
-      { property: "og:description", content: "Installera, aktivera och granska LifeApp-moduler och deras behörigheter." },
+      {
+        property: "og:description",
+        content: "Installera, aktivera och granska LifeApp-moduler och deras behörigheter.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -73,12 +92,14 @@ function LifeStore() {
   return (
     <div className="space-y-8">
       <header>
-        <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Life Store</div>
+        <div className="text-[11px] uppercase tracking-widest text-muted-foreground">
+          Life Store
+        </div>
         <h1 className="display text-4xl">Tillägg</h1>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-          LifeApp är ett skal. Varje del — kalender, ekonomi, lön — är en modul som kan
-          installeras, uppdateras och stängas av utan att påverka resten. Din data ligger kvar
-          även om du stänger av en modul.
+          LifeApp är ett skal. Varje del — kalender, ekonomi, lön — är en modul som kan installeras,
+          uppdateras och stängas av utan att påverka resten. Din data ligger kvar även om du stänger
+          av en modul.
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
           LifeApp API {LIFEAPP_API_VERSION} · {(views ?? []).length} moduler i katalogen
@@ -188,13 +209,15 @@ function LifeStore() {
                     </span>
                     {m.estimatedStorageKb != null && (
                       <span className="inline-flex items-center gap-1">
-                        <HardDrive className="h-3.5 w-3.5" /> ~{Math.round(m.estimatedStorageKb / 100) / 10} MB
+                        <HardDrive className="h-3.5 w-3.5" /> ~
+                        {Math.round(m.estimatedStorageKb / 100) / 10} MB
                       </span>
                     )}
                     <span className="inline-flex items-center gap-1">
                       {compatible ? (
                         <>
-                          <ShieldCheck className="h-3.5 w-3.5 text-[oklch(0.75_0.1_165)]" /> Kompatibel
+                          <ShieldCheck className="h-3.5 w-3.5 text-[oklch(0.75_0.1_165)]" />{" "}
+                          Kompatibel
                         </>
                       ) : (
                         <>
@@ -217,7 +240,11 @@ function LifeStore() {
                         onClick={() => action.mutate({ action: "install", moduleId: m.id })}
                         className="inline-flex items-center gap-1.5 rounded-full bg-[oklch(0.85_0.12_85/0.16)] px-3.5 py-1.5 text-xs text-[oklch(0.85_0.12_85)] transition hover:bg-[oklch(0.85_0.12_85/0.24)] disabled:opacity-40"
                       >
-                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Blocks className="h-3.5 w-3.5" />}
+                        {busy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Blocks className="h-3.5 w-3.5" />
+                        )}
                         Installera
                       </button>
                     )}
@@ -227,7 +254,11 @@ function LifeStore() {
                         onClick={() => action.mutate({ action: "enable", moduleId: m.id })}
                         className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs transition hover:text-foreground disabled:opacity-40"
                       >
-                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />}
+                        {busy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Power className="h-3.5 w-3.5" />
+                        )}
                         Aktivera
                       </button>
                     )}
@@ -237,7 +268,11 @@ function LifeStore() {
                         onClick={() => action.mutate({ action: "disable", moduleId: m.id })}
                         className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-40"
                       >
-                        {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PowerOff className="h-3.5 w-3.5" />}
+                        {busy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <PowerOff className="h-3.5 w-3.5" />
+                        )}
                         Inaktivera
                       </button>
                     )}
@@ -306,7 +341,8 @@ function LifeStore() {
                       ))}
                       {m.dependencies.length > 0 && (
                         <li className="text-xs text-muted-foreground">
-                          Beroenden: {m.dependencies.map((d) => `${d.moduleId}@${d.range}`).join(", ")}
+                          Beroenden:{" "}
+                          {m.dependencies.map((d) => `${d.moduleId}@${d.range}`).join(", ")}
                         </li>
                       )}
                     </ul>
@@ -328,7 +364,9 @@ function LifeStore() {
               <li key={a.id} className="flex flex-wrap items-center gap-2 text-muted-foreground">
                 <span className="font-mono text-foreground">{a.moduleId}</span>
                 <span>{a.action}</span>
-                <span className={a.success ? "text-[oklch(0.75_0.1_165)]" : "text-[oklch(0.7_0.2_25)]"}>
+                <span
+                  className={a.success ? "text-[oklch(0.75_0.1_165)]" : "text-[oklch(0.7_0.2_25)]"}
+                >
                   {a.success ? "lyckades" : "misslyckades"}
                 </span>
                 <span>{new Date(a.createdAt).toLocaleString("sv-SE")}</span>
@@ -341,8 +379,8 @@ function LifeStore() {
 
       <div className="inline-flex items-start gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[oklch(0.75_0.1_165)]" />
-        Moduler får aldrig automatisk åtkomst. Varje behörighet begärs explicit, isoleras från
-        andra moduler och kan aldrig nå AI-nycklar eller systemhemligheter.
+        Moduler får aldrig automatisk åtkomst. Varje behörighet begärs explicit, isoleras från andra
+        moduler och kan aldrig nå AI-nycklar eller systemhemligheter.
       </div>
     </div>
   );
