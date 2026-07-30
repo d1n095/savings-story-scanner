@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   ChevronLeft, ChevronRight, Plus, Briefcase, Wallet, TrendingUp,
-  Bell, Plane, StickyNote, X, Sparkles, Trash2,
+  Bell, Plane, StickyNote, X, Sparkles, Trash2, ArrowUpRight,
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -259,6 +259,8 @@ function DayPanel({ day, date, onClose, onQuick, onRefresh }: {
   }
 
   async function removeEvent(ev: DayEvent) {
+    // Kalendern äger inte modulernas data och får aldrig radera den.
+    if (ev.kind === "module") return;
     if (!ev.refTable || !ev.refId) return;
     if (!confirm(`Ta bort "${ev.title}"?`)) return;
     const { error } = await supabase.from(ev.refTable as any).delete().eq("id", ev.refId);
