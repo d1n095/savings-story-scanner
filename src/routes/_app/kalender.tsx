@@ -323,8 +323,8 @@ function DayPanel({ day, date, onClose, onQuick, onRefresh }: {
         {Object.entries(groups).map(([kind, list]) => (
           <div key={kind}>
             <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-              <span className={cn("h-2 w-2 rounded-full", KIND_META[kind as EventKind]?.dot)} />
-              {KIND_META[kind as EventKind]?.label}
+              <span className={cn("h-2 w-2 rounded-full", list[0]?.dot ?? KIND_META[kind as EventKind]?.dot)} />
+              {(kind === "module" ? list[0]?.groupLabel : undefined) ?? KIND_META[kind as EventKind]?.label}
             </div>
             <ul className="space-y-1.5">
               {list.map((ev) => (
@@ -339,7 +339,16 @@ function DayPanel({ day, date, onClose, onQuick, onRefresh }: {
                         {ev.amount < 0 ? "−" : ""}{sek(Math.abs(ev.amount))}
                       </span>
                     )}
-                    {ev.refTable && (
+                    {ev.deepLink && (
+                      <Link
+                        to={ev.deepLink}
+                        onClick={onClose}
+                        className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-1 text-[10px] text-muted-foreground transition hover:border-[oklch(0.85_0.12_85/0.4)] hover:text-foreground"
+                      >
+                        Öppna <ArrowUpRight className="h-3 w-3" />
+                      </Link>
+                    )}
+                    {ev.refTable && ev.kind !== "module" && (
                       <button onClick={() => removeEvent(ev)} className="opacity-0 transition group-hover:opacity-100">
                         <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-[oklch(0.7_0.14_28)]" />
                       </button>
@@ -350,6 +359,7 @@ function DayPanel({ day, date, onClose, onQuick, onRefresh }: {
             </ul>
           </div>
         ))}
+
       </div>
 
       {/* Insight (deterministic) */}
