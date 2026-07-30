@@ -19,8 +19,10 @@ Modules  — kalender, ekonomi, lön, hälsa, träning, boende, shopping, föret
 | Life Module SDK | `src/platform/module-sdk.ts` | `LifeModuleManifest`, `defineLifeModule()`, apiVersion-kompatibilitet |
 | Modulregister | `src/platform/module-registry.ts` | installera, aktivera, uppdatera, rulla tillbaka, avinstallera |
 | Life Module Runtime | `src/platform/module-runtime.ts` | prövar routes, data, events, kommandon, hemligheter + audit |
-| Life Store-katalog | `src/platform/module-catalog.ts` | ren data: vilka moduler som finns och vad de begär |
+| Life Store-katalog | `src/modules/catalog.ts` + `src/platform/module-catalog.ts` | ren data: modullagret sätter samman katalogen; plattformen håller ännu icke-flyttade kärnmanifest |
+| Referensmodul | `src/modules/planning/` | första riktiga modulen: eget manifest, egen publik yta, tunna route-adaptrar |
 | Life Store (UI) | `src/routes/_app/tillagg.tsx` | läsvy: installerade, tillgängliga, behörigheter, kompatibilitet |
+
 
 ## LifeApp Core (får aldrig ligga i en modul)
 

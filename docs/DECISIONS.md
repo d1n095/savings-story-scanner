@@ -52,3 +52,14 @@ uttrycklig avstämning, aldrig genom tyst massuppdatering.
 Rotplacerad `/AGENTS.md` gäller före andra instruktioner, och pekar på blueprint,
 modulstandard, Definition of Done, current state, beslutslogg och kravmatris.
 **Konsekvens:** Nya arkitekturdokument skapas inte; befintliga uppdateras.
+
+## ADR-013 — Modulmanifest bor i modulen, katalogen i modullagret
+**Datum:** 2026-07-30 · **Status:** Accepted
+Planering är den första riktiga Life Module: manifestet ligger i
+`src/modules/planning/module.ts` och Life Store-katalogen sätts samman i
+`src/modules/catalog.ts`. Beroendet går alltid moduler → plattform.
+**Konsekvens:** `src/platform/module-catalog.ts` behåller endast ännu icke-flyttade
+kärnmanifest (`corePreinstalledModules`) plus `upcomingModules`. Route-filer under
+`src/routes/_app/` är tunna adaptrar utan affärslogik.
+**Se:** [MODULE_STANDARD.md](MODULE_STANDARD.md), `src/modules/planning/README.md`
+

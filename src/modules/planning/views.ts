@@ -19,13 +19,13 @@ export type AbsenceRow = {
   id: string;
   kind: "vacation" | "sick" | "vab" | "leave" | "other";
   starts_on: string; // YYYY-MM-DD
-  ends_on: string;   // YYYY-MM-DD
+  ends_on: string; // YYYY-MM-DD
   paid: boolean;
 };
 
 export type DayAggregate = {
-  date: string;          // YYYY-MM-DD
-  weekday: number;       // 0=sön..6=lör
+  date: string; // YYYY-MM-DD
+  weekday: number; // 0=sön..6=lör
   isWeekend: boolean;
   isRed: boolean;
   redName?: string;
@@ -82,10 +82,18 @@ export function endOfWeek(d: Date): Date {
   s.setDate(s.getDate() + 6);
   return s;
 }
-export function startOfMonth(d: Date): Date { return new Date(d.getFullYear(), d.getMonth(), 1); }
-export function endOfMonth(d: Date): Date { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
-export function startOfYear(y: number): Date { return new Date(y, 0, 1); }
-export function endOfYear(y: number): Date { return new Date(y, 11, 31); }
+export function startOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+export function endOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+}
+export function startOfYear(y: number): Date {
+  return new Date(y, 0, 1);
+}
+export function endOfYear(y: number): Date {
+  return new Date(y, 11, 31);
+}
 
 export function isoWeekNumber(d: Date): number {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -96,12 +104,18 @@ export function isoWeekNumber(d: Date): number {
 }
 
 function dayHours(s: ShiftRow): number {
-  return Math.max(0, (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 3600000 - (s.break_minutes ?? 0) / 60);
+  return Math.max(
+    0,
+    (new Date(s.ends_at).getTime() - new Date(s.starts_at).getTime()) / 3600000 -
+      (s.break_minutes ?? 0) / 60,
+  );
 }
 
 export function aggregateRange(
-  start: Date, end: Date,
-  shifts: ShiftRow[], absences: AbsenceRow[],
+  start: Date,
+  end: Date,
+  shifts: ShiftRow[],
+  absences: AbsenceRow[],
   taxRate: number | null | undefined,
 ): RangeAggregate {
   const days = eachDay(start, end);
@@ -125,8 +139,12 @@ export function aggregateRange(
       isWeekend: d.getDay() === 0 || d.getDay() === 6,
       isRed: !!red || isHelg(d),
       redName: red?.name,
-      hours, base, ob, gross: base + ob,
-      shifts: daysShifts, absences: daysAbs,
+      hours,
+      base,
+      ob,
+      gross: base + ob,
+      shifts: daysShifts,
+      absences: daysAbs,
     };
   });
 
@@ -135,23 +153,39 @@ export function aggregateRange(
   const ob = out.reduce((s, d) => s + d.ob, 0);
   const gross = base + ob;
   const redDays = out.filter((d) => d.isRed).length;
-  const vacationDays = out.filter((d) => d.absences.some((a) => a.kind === "vacation") && !d.isWeekend).length;
+  const vacationDays = out.filter(
+    (d) => d.absences.some((a) => a.kind === "vacation") && !d.isWeekend,
+  ).length;
   const sickDays = out.filter((d) => d.absences.some((a) => a.kind === "sick")).length;
   const freeDays = out.filter((d) => d.shifts.length === 0 && d.absences.length === 0).length;
   const shiftCount = out.reduce((s, d) => s + d.shifts.length, 0);
 
   return {
-    hours, base, ob, gross,
+    hours,
+    base,
+    ob,
+    gross,
     netEstimate: net(gross, taxRate),
-    shiftCount, redDays, vacationDays, sickDays, freeDays,
+    shiftCount,
+    redDays,
+    vacationDays,
+    sickDays,
+    freeDays,
     days: out,
   };
 }
 
-export function aggregateByMonth(year: number, shifts: ShiftRow[], absences: AbsenceRow[], tax: number | null | undefined) {
+export function aggregateByMonth(
+  year: number,
+  shifts: ShiftRow[],
+  absences: AbsenceRow[],
+  tax: number | null | undefined,
+) {
   const months: RangeAggregate[] = [];
   for (let m = 0; m < 12; m++) {
-    months.push(aggregateRange(new Date(year, m, 1), new Date(year, m + 1, 0), shifts, absences, tax));
+    months.push(
+      aggregateRange(new Date(year, m, 1), new Date(year, m + 1, 0), shifts, absences, tax),
+    );
   }
   return months;
 }

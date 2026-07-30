@@ -3,8 +3,8 @@ import { holidaysForYear } from "../calendar/holidays";
 import { eachDay, isoDate, type ShiftRow } from "./views";
 
 export type VacationAnalysis = {
-  vacationDaysUsed: number;  // vardagar inom perioden (mån-fre, ej röd)
-  totalFreeDays: number;     // dagar utan jobb-pass (inkl helg, röd, semester)
+  vacationDaysUsed: number; // vardagar inom perioden (mån-fre, ej röd)
+  totalFreeDays: number; // dagar utan jobb-pass (inkl helg, röd, semester)
   affectedShifts: ShiftRow[];
   lostOB: number;
   lostBase: number;
@@ -15,16 +15,14 @@ function isRedKey(year: number, key: string): boolean {
   return holidaysForYear(year).some((h) => h.date === key && h.type === "red");
 }
 
-export function analyzeVacation(
-  start: Date, end: Date,
-  shifts: ShiftRow[],
-): VacationAnalysis {
+export function analyzeVacation(start: Date, end: Date, shifts: ShiftRow[]): VacationAnalysis {
   const days = eachDay(start, end);
   let vacationDaysUsed = 0;
   let totalFreeDays = 0;
   for (const d of days) {
     const key = isoDate(d);
-    const isSun = d.getDay() === 0, isSat = d.getDay() === 6;
+    const isSun = d.getDay() === 0,
+      isSat = d.getDay() === 6;
     const red = isRedKey(d.getFullYear(), key);
     if (!isSun && !isSat && !red) vacationDaysUsed++;
     totalFreeDays++;
@@ -51,19 +49,25 @@ export function analyzeVacation(
     let extra = 1; // dagen själv
     const probe = new Date(ref);
     probe.setDate(probe.getDate() + offset);
-    while (probe.getDay() === 0 || probe.getDay() === 6 || isRedKey(probe.getFullYear(), isoDate(probe))) {
+    while (
+      probe.getDay() === 0 ||
+      probe.getDay() === 6 ||
+      isRedKey(probe.getFullYear(), isoDate(probe))
+    ) {
       extra++;
       probe.setDate(probe.getDate() + offset);
     }
     if (extra > 1) {
       tips.push({
         addDate: key,
-        label: offset === -1 ? `Ta även ${key} → +${extra} lediga` : `Ta även ${key} → +${extra} lediga`,
+        label:
+          offset === -1 ? `Ta även ${key} → +${extra} lediga` : `Ta även ${key} → +${extra} lediga`,
         extraFree: extra,
       });
     }
   };
-  tryStretch(-1); tryStretch(1);
+  tryStretch(-1);
+  tryStretch(1);
 
   return { vacationDaysUsed, totalFreeDays, affectedShifts, lostOB, lostBase, stretchTips: tips };
 }

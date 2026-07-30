@@ -23,16 +23,22 @@ const otherFiles = allFiles.filter((f) => !platformFiles.includes(f));
 
 describe("Isolering av plattformslagret", () => {
   it("bara godkända skal-filer importerar src/platform", () => {
-    // Godkända konsumenter: Life Store-vyn, skalets navigation och den enda
-    // modultjänsten. Ingen annan fil får nå plattformslagret direkt.
+    // Godkända konsumenter: Life Store-vyn, skalets navigation, modultjänsten
+    // och modullagrets egna manifest/katalog (moduler → plattform är tillåtet).
     const allowed = [
       join("routes", "_app", "tillagg.tsx"),
       join("routes", "_app.tsx"),
       join("services", "module-service.ts"),
       join("services", "__tests__", "module-service.test.ts"),
+      join("modules", "catalog.ts"),
+    ];
+    const allowedPattern = [
+      /modules[\\/][a-z-]+[\\/]module\.ts$/,
+      /modules[\\/][a-z-]+[\\/]__tests__[\\/]/,
     ];
     const offenders = otherFiles
       .filter((f) => !allowed.some((a) => f.endsWith(a)))
+      .filter((f) => !allowedPattern.some((p) => p.test(f)))
       .filter((f) => /from\s+["'](@\/platform|.*\/platform\/)/.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
   });
@@ -40,7 +46,10 @@ describe("Isolering av plattformslagret", () => {
   it("src/platform importerar varken databas, UI eller affärsmoduler", () => {
     const forbidden =
       /from\s+["'][^"']*(integrations\/supabase|@\/components|@\/modules|@\/routes|@tanstack)/;
-    const offenders = platformFiles.filter((f) => forbidden.test(readFileSync(f, "utf8")));
+    const offenders = platformFiles
+      // Tester får läsa modullagrets katalog; produktionskoden får inte.
+      .filter((f) => !f.includes("__tests__"))
+      .filter((f) => forbidden.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
   });
 

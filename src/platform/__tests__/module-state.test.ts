@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { lifeStoreCatalog, preinstalledModules, validateLifeModuleManifest } from "@/platform";
+import { validateLifeModuleManifest } from "@/platform";
+import { lifeStoreCatalog, preinstalledModules } from "@/modules/catalog";
 import {
   accessiblePaths,
   canDisable,
