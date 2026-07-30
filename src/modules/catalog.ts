@@ -8,11 +8,13 @@
 import { corePreinstalledModules, upcomingModules } from "@/platform/module-catalog";
 import type { LifeModuleManifest } from "@/platform/module-sdk";
 import { planningModule } from "./planning/module";
+import { trainingModule } from "./training/module";
 
 /** Moduler som följer med LifeApp idag. */
 export const preinstalledModules: LifeModuleManifest[] = [
   ...corePreinstalledModules,
   planningModule,
+  trainingModule,
 ];
 
 export const lifeStoreCatalog: LifeModuleManifest[] = [...preinstalledModules, ...upcomingModules];

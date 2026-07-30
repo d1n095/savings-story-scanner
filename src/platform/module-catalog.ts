@@ -110,29 +110,8 @@ export const upcomingModules: LifeModuleManifest[] = [
     estimatedStorageKb: 300,
     standalone: { enabled: false },
   }),
-  defineLifeModule({
-    id: "training",
-    name: "Träning",
-    version: "0.1.0",
-    apiVersion: api,
-    description: "Pass, program och progression.",
-    publisher: "LifeApp",
-    firstParty: true,
-    pricing: { kind: "free" },
-    routes: [{ path: "/traning", label: "Träning", requiresAuth: true }],
-    capabilities: ["read", "write", "schedule"],
-    permissions: [
-      { permission: "training:read", reason: "Visa dina träningspass.", required: true },
-      { permission: "training:write", reason: "Logga träning.", required: true },
-      { permission: "calendar:write", reason: "Lägga träningspass i kalendern.", required: false },
-    ],
-    dependencies: [{ moduleId: "calendar", range: "^1.0.0", optional: true }],
-    eventsPublished: ["training.session.created"],
-    eventsConsumed: [],
-    commandsSupported: [],
-    estimatedStorageKb: 250,
-    standalone: { enabled: true, entryPoint: "modules/training/standalone" },
-  }),
+  // Träningsmodulen äger nu sitt eget manifest i src/modules/training/module.ts.
+
   defineLifeModule({
     id: "home",
     name: "Boende",

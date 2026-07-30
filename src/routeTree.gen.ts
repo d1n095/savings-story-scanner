@@ -28,7 +28,10 @@ import { Route as AppInsikterRouteImport } from './routes/_app/insikter'
 import { Route as AppImporteraRouteImport } from './routes/_app/importera'
 import { Route as AppIdagRouteImport } from './routes/_app/idag'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppTraningIndexRouteImport } from './routes/_app/traning.index'
 import { Route as AppInstallningarIndexRouteImport } from './routes/_app/installningar.index'
+import { Route as AppTraningPassRouteImport } from './routes/_app/traning.pass'
+import { Route as AppTraningHistorikRouteImport } from './routes/_app/traning.historik'
 import { Route as AppInstallningarProfilOchReglerRouteImport } from './routes/_app/installningar.profil-och-regler'
 import { Route as AppInstallningarLonArbeteRouteImport } from './routes/_app/installningar.lon-arbete'
 
@@ -126,10 +129,25 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTraningIndexRoute = AppTraningIndexRouteImport.update({
+  id: '/traning/',
+  path: '/traning/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppInstallningarIndexRoute = AppInstallningarIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppInstallningarRoute,
+} as any)
+const AppTraningPassRoute = AppTraningPassRouteImport.update({
+  id: '/traning/pass',
+  path: '/traning/pass',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTraningHistorikRoute = AppTraningHistorikRouteImport.update({
+  id: '/traning/historik',
+  path: '/traning/historik',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppInstallningarProfilOchReglerRoute =
   AppInstallningarProfilOchReglerRouteImport.update({
@@ -165,7 +183,10 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
   '/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
+  '/traning/historik': typeof AppTraningHistorikRoute
+  '/traning/pass': typeof AppTraningPassRoute
   '/installningar/': typeof AppInstallningarIndexRoute
+  '/traning/': typeof AppTraningIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -187,7 +208,10 @@ export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
   '/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
+  '/traning/historik': typeof AppTraningHistorikRoute
+  '/traning/pass': typeof AppTraningPassRoute
   '/installningar': typeof AppInstallningarIndexRoute
+  '/traning': typeof AppTraningIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -212,7 +236,10 @@ export interface FileRoutesById {
   '/auth_/reset-password': typeof AuthResetPasswordRoute
   '/_app/installningar/lon-arbete': typeof AppInstallningarLonArbeteRoute
   '/_app/installningar/profil-och-regler': typeof AppInstallningarProfilOchReglerRoute
+  '/_app/traning/historik': typeof AppTraningHistorikRoute
+  '/_app/traning/pass': typeof AppTraningPassRoute
   '/_app/installningar/': typeof AppInstallningarIndexRoute
+  '/_app/traning/': typeof AppTraningIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -237,7 +264,10 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/installningar/lon-arbete'
     | '/installningar/profil-och-regler'
+    | '/traning/historik'
+    | '/traning/pass'
     | '/installningar/'
+    | '/traning/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -259,7 +289,10 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/installningar/lon-arbete'
     | '/installningar/profil-och-regler'
+    | '/traning/historik'
+    | '/traning/pass'
     | '/installningar'
+    | '/traning'
   id:
     | '__root__'
     | '/'
@@ -283,7 +316,10 @@ export interface FileRouteTypes {
     | '/auth_/reset-password'
     | '/_app/installningar/lon-arbete'
     | '/_app/installningar/profil-och-regler'
+    | '/_app/traning/historik'
+    | '/_app/traning/pass'
     | '/_app/installningar/'
+    | '/_app/traning/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -432,12 +468,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/traning/': {
+      id: '/_app/traning/'
+      path: '/traning'
+      fullPath: '/traning/'
+      preLoaderRoute: typeof AppTraningIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/installningar/': {
       id: '/_app/installningar/'
       path: '/'
       fullPath: '/installningar/'
       preLoaderRoute: typeof AppInstallningarIndexRouteImport
       parentRoute: typeof AppInstallningarRoute
+    }
+    '/_app/traning/pass': {
+      id: '/_app/traning/pass'
+      path: '/traning/pass'
+      fullPath: '/traning/pass'
+      preLoaderRoute: typeof AppTraningPassRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/traning/historik': {
+      id: '/_app/traning/historik'
+      path: '/traning/historik'
+      fullPath: '/traning/historik'
+      preLoaderRoute: typeof AppTraningHistorikRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/installningar/profil-och-regler': {
       id: '/_app/installningar/profil-och-regler'
@@ -483,6 +540,9 @@ interface AppRouteChildren {
   AppPengarRoute: typeof AppPengarRoute
   AppPlaneringRoute: typeof AppPlaneringRoute
   AppTillaggRoute: typeof AppTillaggRoute
+  AppTraningHistorikRoute: typeof AppTraningHistorikRoute
+  AppTraningPassRoute: typeof AppTraningPassRoute
+  AppTraningIndexRoute: typeof AppTraningIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -497,6 +557,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppPengarRoute: AppPengarRoute,
   AppPlaneringRoute: AppPlaneringRoute,
   AppTillaggRoute: AppTillaggRoute,
+  AppTraningHistorikRoute: AppTraningHistorikRoute,
+  AppTraningPassRoute: AppTraningPassRoute,
+  AppTraningIndexRoute: AppTraningIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

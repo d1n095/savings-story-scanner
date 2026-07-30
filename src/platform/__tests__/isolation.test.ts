@@ -34,8 +34,11 @@ describe("Isolering av plattformslagret", () => {
     ];
     const allowedPattern = [
       /modules[\\/][a-z-]+[\\/]module\.ts$/,
+      // Modulens egna kontraktsadapter mot plattformens kuvert (events/kommandon).
+      /modules[\\/][a-z-]+[\\/]events\.ts$/,
       /modules[\\/][a-z-]+[\\/]__tests__[\\/]/,
     ];
+
     const offenders = otherFiles
       .filter((f) => !allowed.some((a) => f.endsWith(a)))
       .filter((f) => !allowedPattern.some((p) => p.test(f)))
