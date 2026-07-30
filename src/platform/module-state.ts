@@ -123,7 +123,7 @@ export function resolveModuleView(
   preinstalledIds: readonly string[],
   hostApiVersion: SemVer = LIFEAPP_API_VERSION,
 ): ModuleView {
-  const { record, persisted } = recordFor(manifest, records, preinstalledIds);
+  const { record } = recordFor(manifest, records, preinstalledIds);
   const required = isRequiredModule(manifest.id);
   const base = { manifest, record, installed: !!record, required };
 
@@ -149,7 +149,7 @@ export function resolveModuleView(
   if (!record.enabled)
     return { ...base, state: "disabled", message: "Modulen är inaktiverad." };
 
-  return { ...base, state: "enabled", installed: true, record, ...(persisted ? {} : {}) };
+  return { ...base, state: "enabled" };
 }
 
 export function resolveModuleViews(
