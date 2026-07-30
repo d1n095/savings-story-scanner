@@ -23,6 +23,8 @@ import {
   Sparkles,
   Brain,
   Blocks,
+  Dumbbell,
+
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActionFab } from "@/components/action-sheet/ActionSheet";
@@ -53,10 +55,12 @@ const SECONDARY = [
   { to: "/main-ai", label: "MainAI", icon: Brain },
   { to: "/insikter", label: "Insikter", icon: Sparkles },
   { to: "/planering", label: "Planering", icon: CalendarRange },
+  { to: "/traning", label: "Träning", icon: Dumbbell },
   { to: "/jobb", label: "Jobb & lön", icon: Briefcase },
   { to: "/dashboard", label: "Översikt", icon: LayoutDashboard },
   { to: "/tillagg", label: "Tillägg", icon: Blocks },
 ] as const;
+
 
 function AppLayout() {
   const router = useRouter();
