@@ -2,11 +2,12 @@
 // Framtida moduler (Health, Travel, Documents…) skriver bara till timeline_events med rätt kind.
 import { holidaysForYear, isRedDay, type SwedishHoliday } from "./holidays";
 import { namedaysFor } from "./namedays";
+import type { CalendarProviderContribution } from "@/platform/calendar-provider";
 
 export type EventKind =
   | "shift" | "expense" | "income" | "reminder" | "absence"
   | "holiday" | "nameday" | "signal" | "note"
-  | "health" | "travel" | "document";
+  | "health" | "travel" | "document" | "module";
 
 export type DayEvent = {
   id: string;
@@ -20,6 +21,10 @@ export type DayEvent = {
   dot: string; // bg color for indicator
   refTable?: string;
   refId?: string;
+  /** Intern route som posten länkar till (modulbidrag). */
+  deepLink?: string;
+  /** Grupperingsetikett från modulen, t.ex. "Träning". */
+  groupLabel?: string;
   raw?: any;
 };
 
@@ -82,6 +87,8 @@ export type Sources = {
   reminders?: ReminderRow[];
   absences?: AbsenceRow[];
   timeline?: TimelineEventRow[];
+  /** Bidrag från installerade och aktiva moduler via kalenderkontraktet. */
+  contributions?: CalendarProviderContribution[];
 };
 
 export const KIND_META: Record<EventKind, { dot: string; label: string }> = {
@@ -97,6 +104,15 @@ export const KIND_META: Record<EventKind, { dot: string; label: string }> = {
   health:   { dot: "bg-[oklch(0.7_0.12_165)]",   label: "Hälsa" },
   travel:   { dot: "bg-[oklch(0.7_0.14_210)]",   label: "Resa" },
   document: { dot: "bg-[oklch(0.6_0.04_85)]",    label: "Dokument" },
+  module:   { dot: "bg-[oklch(0.72_0.13_140)]",  label: "Moduler" },
+};
+
+/** Semantisk ton -> designtoken. Kalendern äger färgvalet, inte modulen. */
+export const TONE_DOT: Record<string, string> = {
+  planned: "bg-[oklch(0.72_0.13_140)]",
+  done: "bg-[oklch(0.7_0.16_150)]",
+  cancelled: "bg-[oklch(0.6_0.04_240)]",
+  info: "bg-white/70",
 };
 
 export function isoDateLocal(d: Date): string {
@@ -243,6 +259,26 @@ export function buildDayIndex(rangeStart: Date, rangeEnd: Date, sources: Sources
       refTable: t.source_table ?? "timeline_events", refId: t.source_id ?? t.id, raw: t,
     });
     if (t.kind === "income" && t.amount != null) s.totals.incomes += Number(t.amount);
+  }
+
+  // Modulbidrag (Träning m.fl.) — kalendern äger inte datan, bara visningen.
+  for (const c of sources.contributions ?? []) {
+    const s = map.get(c.date);
+    if (!s) continue;
+    s.events.push({
+      id: `m-${c.moduleId}-${c.id}`,
+      kind: "module",
+      title: c.title,
+      subtitle: c.time ? `${c.time} · ${c.subtitle ?? ""}`.trim().replace(/ ·\s*$/, "") : c.subtitle,
+      from: c.time,
+      color: c.tone,
+      dot: TONE_DOT[c.tone] ?? KIND_META.module.dot,
+      refTable: c.sourceTable,
+      refId: c.sourceId,
+      deepLink: c.deepLink,
+      groupLabel: c.providerLabel,
+      raw: c,
+    });
   }
 
   return map;
