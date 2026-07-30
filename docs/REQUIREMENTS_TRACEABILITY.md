@@ -23,7 +23,10 @@ tester → verifieringsstatus. Rader utan test eller verifiering är **inte** kl
 | R-PLAT-1 | Modulmanifest, kommandon och events är typade kontrakt | platform | `src/platform/contracts.ts`, `commands.ts`, `events.ts` | — | `platform-contracts.test.ts` | Verifierad |
 | R-PLAT-2 | Plattformslagret är isolerat från affärslogik | platform | `src/platform/index.ts` | — | `isolation.test.ts` | Verifierad |
 | R-PLAT-3 | Moduler kan installeras, aktiveras, uppdateras, rullas tillbaka | platform | `src/platform/module-registry.ts`, `module-runtime.ts`, `module-sdk.ts` | — | `module-system.test.ts` | Verifierad |
-| R-PLAT-4 | Life Store visar behörigheter och kompatibilitet | core | `src/routes/_app/tillagg.tsx`, `src/platform/module-catalog.ts` | — | — | Implementerad, ej verifierad |
+| R-PLAT-4 | Life Store visar behörigheter och kompatibilitet | core | `src/routes/_app/tillagg.tsx`, `src/platform/module-catalog.ts` | — | `module-state.test.ts` | Verifierad |
+| R-PLAT-5 | Installationstillstånd persisteras per användare med RLS | core | `src/services/module-service.ts`, `src/platform/module-state.ts`, `src/hooks/use-modules.ts` | `module_installations` | `module-service.test.ts` | Verifierad |
+| R-PLAT-6 | Navigation och routeåtkomst följer aktiverade moduler | core | `src/routes/_app.tsx`, `src/platform/module-state.ts` | `module_installations` | `module-state.test.ts` | Verifierad |
+| R-PLAT-7 | Modulåtgärder är spårbara i en auditlogg | core | `src/services/module-service.ts`, `src/routes/_app/tillagg.tsx` | `module_audit_events` | `module-service.test.ts` | Verifierad |
 | R-GOV-1 | Projektet har ett permanent styrsystem | governance | `/AGENTS.md`, `docs/PRODUCT_BLUEPRINT.md`, `docs/MODULE_STANDARD.md`, `docs/DEFINITION_OF_DONE.md`, `docs/CURRENT_STATE.md`, `docs/DECISIONS.md`, denna fil | — | — | Verifierad (dokumentation) |
 | R-AI-1 | MainAI-prototypen byggs inte ut | governance | `src/routes/_app/main-ai.tsx` | `main_ai_*` | — | Prototyp (fryst) |
 

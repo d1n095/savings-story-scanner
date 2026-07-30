@@ -1,17 +1,41 @@
-import { createFileRoute, redirect, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  redirect,
+  Link,
+  Outlet,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Calendar, Wallet, Sun, MoreHorizontal, Settings, LogOut, Menu, X,
-  CalendarRange, Briefcase, LayoutDashboard, Sparkles, Brain, Blocks,
+  Calendar,
+  Wallet,
+  Sun,
+  MoreHorizontal,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  CalendarRange,
+  Briefcase,
+  LayoutDashboard,
+  Sparkles,
+  Brain,
+  Blocks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActionFab } from "@/components/action-sheet/ActionSheet";
+import { useModuleViews } from "@/hooks/use-modules";
+import { lifeStoreCatalog } from "@/platform";
+import { accessiblePaths, moduleForPath } from "@/platform/module-state";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) throw redirect({ to: "/auth" });
   },
   component: AppLayout,
@@ -19,19 +43,19 @@ export const Route = createFileRoute("/_app")({
 
 // Nivå 1 — bara det vanligaste. "Skapa" sker via FAB, inte via nav.
 const PRIMARY = [
-  { to: "/idag",     label: "Idag",     icon: Sun },
+  { to: "/idag", label: "Idag", icon: Sun },
   { to: "/kalender", label: "Kalender", icon: Calendar },
-  { to: "/pengar",   label: "Pengar",   icon: Wallet },
+  { to: "/pengar", label: "Pengar", icon: Wallet },
 ] as const;
 
 // Bakom "Mer" — finns kvar för djupgående arbete, men skymd från första vyn.
 const SECONDARY = [
-  { to: "/main-ai",   label: "MainAI",      icon: Brain },
-  { to: "/insikter",  label: "Insikter",    icon: Sparkles },
-  { to: "/planering", label: "Planering",   icon: CalendarRange },
-  { to: "/jobb",      label: "Jobb & lön",  icon: Briefcase },
-  { to: "/dashboard", label: "Översikt",    icon: LayoutDashboard },
-  { to: "/tillagg",   label: "Tillägg",     icon: Blocks },
+  { to: "/main-ai", label: "MainAI", icon: Brain },
+  { to: "/insikter", label: "Insikter", icon: Sparkles },
+  { to: "/planering", label: "Planering", icon: CalendarRange },
+  { to: "/jobb", label: "Jobb & lön", icon: Briefcase },
+  { to: "/dashboard", label: "Översikt", icon: LayoutDashboard },
+  { to: "/tillagg", label: "Tillägg", icon: Blocks },
 ] as const;
 
 function AppLayout() {
@@ -51,7 +75,8 @@ function AppLayout() {
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
-      if (accountRef.current && !accountRef.current.contains(e.target as Node)) setAccountOpen(false);
+      if (accountRef.current && !accountRef.current.contains(e.target as Node))
+        setAccountOpen(false);
     }
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
@@ -62,8 +87,28 @@ function AppLayout() {
     router.navigate({ to: "/auth" });
   }
 
+  // Navigation och åtkomst läses ur samma persisterade modultillstånd som Life Store.
+  const { data: moduleViews, isLoading: modulesLoading } = useModuleViews();
+  const allowed = moduleViews ? accessiblePaths(moduleViews) : null;
+
+  function moduleVisible(to: string): boolean {
+    if (!allowed) return true; // under laddning döljs ingenting
+    const owner = moduleForPath(lifeStoreCatalog, to);
+    if (!owner) return true; // skalets egna vyer
+    return allowed.has(to);
+  }
+
+  const primary = PRIMARY.filter((i) => moduleVisible(i.to));
+  const secondary = SECONDARY.filter((i) => moduleVisible(i.to));
+
+  const owner = moduleForPath(lifeStoreCatalog, path);
+  const blockedModule =
+    owner && allowed && !modulesLoading && !owner.routes.some((r) => allowed.has(r.path))
+      ? owner
+      : null;
+
   const initial = (email?.[0] || "U").toUpperCase();
-  const inSecondary = SECONDARY.some((s) => path.startsWith(s.to));
+  const inSecondary = secondary.some((s) => path.startsWith(s.to));
 
   return (
     <div className="min-h-screen lg:flex">
@@ -75,18 +120,26 @@ function AppLayout() {
         )}
       >
         <div className="flex h-full flex-col">
-          <Link to="/idag" onClick={() => setOpen(false)} className="flex items-center gap-3 px-6 pt-7 pb-6 hover:opacity-90">
+          <Link
+            to="/idag"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-6 pt-7 pb-6 hover:opacity-90"
+          >
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-[oklch(0.85_0.12_85)] to-[oklch(0.6_0.1_75)] text-background shadow-[0_8px_24px_-8px_oklch(0.78_0.105_85/0.6)]">
               <span className="display text-lg">M</span>
             </div>
             <div>
-              <div className="display text-base leading-tight">My Money <span className="gold-text">Master</span></div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Life OS · 2030</div>
+              <div className="display text-base leading-tight">
+                My Money <span className="gold-text">Master</span>
+              </div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                Life OS · 2030
+              </div>
             </div>
           </Link>
 
           <nav className="flex-1 space-y-1 px-3">
-            {PRIMARY.map((item) => {
+            {primary.map((item) => {
               const active = path.startsWith(item.to);
               const Icon = item.icon;
               return (
@@ -103,7 +156,9 @@ function AppLayout() {
                 >
                   <Icon className={cn("h-4 w-4", active && "text-[oklch(0.85_0.12_85)]")} />
                   <span>{item.label}</span>
-                  {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[oklch(0.85_0.12_85)] shadow-[0_0_12px_oklch(0.85_0.12_85)]" />}
+                  {active && (
+                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[oklch(0.85_0.12_85)] shadow-[0_0_12px_oklch(0.85_0.12_85)]" />
+                  )}
                 </Link>
               );
             })}
@@ -120,22 +175,29 @@ function AppLayout() {
                     : "text-muted-foreground hover:bg-white/[0.03] hover:text-foreground",
                 )}
               >
-                <MoreHorizontal className={cn("h-4 w-4", inSecondary && "text-[oklch(0.85_0.12_85)]")} />
+                <MoreHorizontal
+                  className={cn("h-4 w-4", inSecondary && "text-[oklch(0.85_0.12_85)]")}
+                />
                 <span>Mer</span>
               </button>
               {moreOpen && (
                 <div className="ml-7 mt-1 space-y-0.5 border-l border-border pl-2">
-                  {SECONDARY.map((item) => {
+                  {secondary.map((item) => {
                     const active = path.startsWith(item.to);
                     const Icon = item.icon;
                     return (
                       <Link
                         key={item.to}
                         to={item.to}
-                        onClick={() => { setMoreOpen(false); setOpen(false); }}
+                        onClick={() => {
+                          setMoreOpen(false);
+                          setOpen(false);
+                        }}
                         className={cn(
                           "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs transition",
-                          active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+                          active
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
                         )}
                       >
                         <Icon className="h-3.5 w-3.5" />
@@ -159,14 +221,19 @@ function AppLayout() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm">{email || "—"}</div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Konto</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Konto
+                </div>
               </div>
             </button>
             {accountOpen && (
               <div className="absolute bottom-16 left-3 right-3 z-50 overflow-hidden rounded-xl border border-border bg-surface/95 backdrop-blur-xl shadow-[0_12px_32px_-8px_rgba(0,0,0,0.6)]">
                 <Link
                   to="/installningar"
-                  onClick={() => { setAccountOpen(false); setOpen(false); }}
+                  onClick={() => {
+                    setAccountOpen(false);
+                    setOpen(false);
+                  }}
                   className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-muted-foreground hover:bg-white/[0.05] hover:text-foreground"
                 >
                   <Settings className="h-4 w-4" />
@@ -190,7 +257,9 @@ function AppLayout() {
         <button onClick={() => setOpen((v) => !v)} className="rounded-lg border border-border p-2">
           {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </button>
-        <Link to="/idag" className="display text-base hover:opacity-90">My Money <span className="gold-text">Master</span></Link>
+        <Link to="/idag" className="display text-base hover:opacity-90">
+          My Money <span className="gold-text">Master</span>
+        </Link>
         <Link
           to="/installningar"
           aria-label="Inställningar"
@@ -209,11 +278,29 @@ function AppLayout() {
               : "max-w-6xl px-4 py-6 pb-28 sm:px-6 lg:py-10",
           )}
         >
-          <Outlet />
+          {blockedModule ? (
+            <div className="mx-auto max-w-lg rounded-3xl border border-border p-8 text-center">
+              <div className="display text-2xl">{blockedModule.name} är avstängd</div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Modulen är inaktiverad eller avinstallerad. Din data finns kvar och återkommer så
+                fort du aktiverar modulen igen.
+              </p>
+              <Link
+                to="/tillagg"
+                className="mt-5 inline-flex rounded-full bg-[oklch(0.85_0.12_85/0.16)] px-4 py-2 text-xs text-[oklch(0.85_0.12_85)]"
+              >
+                Öppna Tillägg
+              </Link>
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </div>
       </main>
 
-      {open && <div onClick={() => setOpen(false)} className="fixed inset-0 z-30 bg-black/40 lg:hidden" />}
+      {open && (
+        <div onClick={() => setOpen(false)} className="fixed inset-0 z-30 bg-black/40 lg:hidden" />
+      )}
 
       {/* Global "Vad vill du göra?"-knapp — dold på MainAI där den skulle täcka chatten */}
       {!path.startsWith("/main-ai") && <ActionFab />}
