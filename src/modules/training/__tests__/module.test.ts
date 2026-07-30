@@ -141,12 +141,14 @@ describe("beräkningar", () => {
 
 describe("händelser", () => {
   it("byggs med modulens id som källa och deklarerat namn", () => {
-    const envelope = buildTrainingEvent("training.session.completed", {
+    const envelope = buildTrainingEvent("training.session.completed", "user-1", {
       sessionId: "s-1",
       title: "Pass",
       scheduledOn: "2026-07-30",
     });
     expect(trainingModule.eventsPublished).toContain(envelope.name);
     expect(envelope.payload.sessionId).toBe("s-1");
+    expect(envelope.moduleId).toBe(TRAINING_MODULE_ID);
+
   });
 });
