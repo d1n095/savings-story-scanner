@@ -269,7 +269,7 @@ export function buildDayIndex(rangeStart: Date, rangeEnd: Date, sources: Sources
       id: `m-${c.moduleId}-${c.id}`,
       kind: "module",
       title: c.title,
-      subtitle: c.time ? `${c.time} · ${c.subtitle ?? ""}`.trim().replace(/ ·\s*$/, "") : c.subtitle,
+      subtitle: c.time ? [c.time, c.subtitle].filter(Boolean).join(" · ") : c.subtitle,
       from: c.time,
       color: c.tone,
       dot: TONE_DOT[c.tone] ?? KIND_META.module.dot,

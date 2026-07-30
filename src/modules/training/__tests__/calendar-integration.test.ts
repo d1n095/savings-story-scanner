@@ -39,9 +39,7 @@ function provider(over: Partial<CalendarProvider> = {}): CalendarProvider {
     id: "test.provider",
     moduleId: "training",
     label: "Träning",
-    load: async () => [
-      { id: "a", date: "2026-03-10", title: "Pass", tone: "planned" },
-    ],
+    load: async () => [{ id: "a", date: "2026-03-10", title: "Pass", tone: "planned" }],
     ...over,
   };
 }
@@ -70,14 +68,23 @@ describe("kalenderleverantörsregistret", () => {
 
   it("utesluter bidrag utanför intervallet", async () => {
     registerCalendarProvider(
-      provider({ load: async () => [{ id: "x", date: "2026-04-02", title: "Pass", tone: "planned" }] }),
+      provider({
+        load: async () => [{ id: "x", date: "2026-04-02", title: "Pass", tone: "planned" }],
+      }),
     );
     const { contributions } = await collectCalendarContributions(["training"], range);
     expect(contributions).toEqual([]);
   });
 
   it("isolerar fel: en trasig provider sänker inte kalendern", async () => {
-    registerCalendarProvider(provider({ id: "bad", load: async () => { throw new Error("nej"); } }));
+    registerCalendarProvider(
+      provider({
+        id: "bad",
+        load: async () => {
+          throw new Error("nej");
+        },
+      }),
+    );
     registerCalendarProvider(provider({ id: "good" }));
     const { contributions, failed } = await collectCalendarContributions(["training"], range);
     expect(failed).toEqual(["training"]);
