@@ -614,7 +614,12 @@ export async function correctSession(
     if (invalid) return fail("validation", invalid);
   }
 
-  const patch: Record<string, unknown> = {};
+  const patch: {
+    title?: string;
+    duration_min?: number | null;
+    perceived_effort?: number | null;
+    notes?: string | null;
+  } = {};
   if (input.title !== undefined) patch.title = input.title.trim();
   if (input.durationMin !== undefined) patch.duration_min = input.durationMin;
   if (input.perceivedEffort !== undefined) patch.perceived_effort = input.perceivedEffort;
