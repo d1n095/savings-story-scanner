@@ -87,10 +87,25 @@ export function plannedForDate<T extends TrainingSession>(sessions: T[], date: s
     .sort((a, b) => (a.scheduledTime ?? "99").localeCompare(b.scheduledTime ?? "99"));
 }
 
+/** Planerade pass efter angivet datum (exklusive datumet självt). */
 export function upcomingPlanned<T extends TrainingSession>(sessions: T[], fromDate: string): T[] {
   return sessions
     .filter((s) => s.status === "planned" && s.scheduledOn > fromDate)
     .sort((a, b) => a.scheduledOn.localeCompare(b.scheduledOn));
+}
+
+/**
+ * Planerade pass från och med angivet datum. Används i planeringsvyn så att
+ * ett pass som planeras för idag syns direkt.
+ */
+export function plannedFromDate<T extends TrainingSession>(sessions: T[], fromDate: string): T[] {
+  return sessions
+    .filter((s) => s.status === "planned" && s.scheduledOn >= fromDate)
+    .sort(
+      (a, b) =>
+        a.scheduledOn.localeCompare(b.scheduledOn) ||
+        (a.scheduledTime ?? "99").localeCompare(b.scheduledTime ?? "99"),
+    );
 }
 
 export function recentCompleted<T extends TrainingSession>(sessions: T[], limit = 5): T[] {

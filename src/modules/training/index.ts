@@ -18,6 +18,7 @@ export {
   sessionDistanceKm,
   sessionSetCount,
   plannedForDate,
+  plannedFromDate,
   upcomingPlanned,
   recentCompleted,
   isoDate,

@@ -22,6 +22,7 @@ import { correctSession, deleteSession } from "../service";
 import { useTrainingMutation, useTrainingSessions } from "../hooks";
 import { sessionDistanceKm, sessionSetCount, sessionVolumeKg } from "../summary";
 import { SESSION_STATUS_LABEL, type SessionDetail } from "../types";
+import { ConfirmDelete } from "./ConfirmDelete";
 import {
   ExerciseLogEditor,
   draftFromSession,
@@ -184,15 +185,22 @@ export function TrainingHistoryView() {
                   <Button size="sm" variant="outline" onClick={() => setCorrecting(s)}>
                     Rätta
                   </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Ta bort passet ${s.title}`}
-                    disabled={remove.isPending}
-                    onClick={() => remove.mutate(s.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <ConfirmDelete
+                    title="Ta bort passet?"
+                    description={`"${s.title}" den ${s.scheduledOn} tas bort med alla loggade övningar och set. Det går inte att ångra.`}
+                    pending={remove.isPending}
+                    onConfirm={() => remove.mutate(s.id)}
+                    trigger={
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Ta bort passet ${s.title}`}
+                        disabled={remove.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
                 </div>
               </div>
 
