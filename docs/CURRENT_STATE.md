@@ -44,6 +44,19 @@
 | T3 | `owner_context_id` saknas på vissa tabeller | Försvårar LifeOS-driven authz |
 | T4 | Många lösa spec-/prompt-filer i repo-roten | Svårt att veta vilket dokument som gäller |
 | T5 | Ingen separat typecheck-kommando; typer kontrolleras via build | Långsammare återkoppling |
+| T6 | `bun run lint` har 3 577 befintliga prettier-fel (~3 342 autofixbara) | Lint kan inte användas som grind förrän baslinjen städats |
+| T7 | `ob-midnight.test.mjs` i roten kraschar vitest ("No test suite found") | Testkommandot exiterar 1 trots 36/36 gröna tester |
+
+### Verifieringsbaslinje 2026-07-30
+
+| Kommando | Utfall |
+| --- | --- |
+| `bun run build` | ✅ grönt |
+| `bun run test` | 36/36 tester gröna, men exit 1 pga T7 |
+| `bun run lint` | ❌ 3 577 fel, samtliga befintliga (T6) |
+
+T6 och T7 fanns före styrsystemsmilstolpen och åtgärdas i en egen, avgränsad
+städmilstolpe — inte genom orelaterade ändringar i pågående arbete.
 
 ## 5. Olösta risker
 
