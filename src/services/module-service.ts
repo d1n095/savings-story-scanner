@@ -314,7 +314,13 @@ export async function uninstallModule(moduleId: string): Promise<ServiceResult<s
           { onConflict: "user_id,module_id" },
         )
       ).error
-    : (await supabase.from("module_installations").delete().eq("module_id", moduleId)).error;
+    : (
+        await supabase
+          .from("module_installations")
+          .delete()
+          .eq("module_id", moduleId)
+          .eq("user_id", userId)
+      ).error;
 
   if (error) {
     await audit(userId, moduleId, "uninstall", false, error.message);
