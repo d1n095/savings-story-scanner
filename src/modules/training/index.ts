@@ -40,3 +40,9 @@ export type {
 } from "./types";
 
 export { setTrainingEventSink, buildTrainingEvent, type TrainingEventName } from "./events";
+
+// Kalenderintegration: modulen levererar sina egna bidrag via kontraktet.
+export {
+  trainingCalendarProvider,
+  sessionsToCalendarContributions,
+} from "./calendar";
