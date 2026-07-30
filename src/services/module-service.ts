@@ -59,7 +59,8 @@ function toRecord(row: Row): ModuleInstallationRecord {
   return {
     moduleId: row.module_id,
     version: row.version,
-    status: row.status === "failed" ? "failed" : "installed",
+    status:
+      row.status === "failed" ? "failed" : row.status === "uninstalled" ? "uninstalled" : "installed",
     enabled: row.enabled,
     grantedPermissions: (row.granted_permissions ?? []) as Permission[],
     settings: (row.settings as Record<string, unknown>) ?? {},
@@ -198,9 +199,14 @@ async function setEnabled(
 
   const existing = await listInstallations();
   if (!existing.ok) return existing;
-  const hasRow = existing.value.some((r) => r.moduleId === moduleId);
+  const hasRow = existing.value.some(
+    (r) => r.moduleId === moduleId && r.status !== "uninstalled",
+  );
 
-  if (!hasRow && !PREINSTALLED_IDS.includes(moduleId))
+  const tombstoned = existing.value.some(
+    (r) => r.moduleId === moduleId && r.status === "uninstalled",
+  );
+  if (!hasRow && (tombstoned || !PREINSTALLED_IDS.includes(moduleId)))
     return fail("not_installed", `${manifest.name} är inte installerad.`);
 
   if (enabled) {
@@ -261,23 +267,34 @@ export async function uninstallModule(moduleId: string): Promise<ServiceResult<s
   if (!existing.ok) return existing;
 
   // Moduler som beror på denna får inte lämnas trasiga.
-  const dependant = lifeStoreCatalog.find(
-    (m) =>
-      m.id !== moduleId &&
-      m.dependencies.some((d) => d.moduleId === moduleId && !d.optional) &&
-      (existing.value.some((r) => r.moduleId === m.id && r.enabled) ||
-        PREINSTALLED_IDS.includes(m.id)),
-  );
+  const dependant = lifeStoreCatalog.find((m) => {
+    if (m.id === moduleId) return false;
+    if (!m.dependencies.some((d) => d.moduleId === moduleId && !d.optional)) return false;
+    const row = existing.value.find((r) => r.moduleId === m.id);
+    if (row) return row.status === "installed" && row.enabled;
+    return PREINSTALLED_IDS.includes(m.id);
+  });
   if (dependant) {
     const message = `${dependant.name} kräver ${manifest.name}. Avinstallera den först.`;
     await audit(userId, moduleId, "uninstall", false, message);
     return fail("missing_dependency", message);
   }
 
-  const { error } = await supabase
-    .from("module_installations")
-    .delete()
-    .eq("module_id", moduleId);
+  const error = PREINSTALLED_IDS.includes(moduleId)
+    ? (
+        await supabase.from("module_installations").upsert(
+          {
+            user_id: userId,
+            module_id: moduleId,
+            version: manifest.version,
+            status: "uninstalled",
+            enabled: false,
+            granted_permissions: [],
+          },
+          { onConflict: "user_id,module_id" },
+        )
+      ).error
+    : (await supabase.from("module_installations").delete().eq("module_id", moduleId)).error;
 
   if (error) {
     await audit(userId, moduleId, "uninstall", false, error.message);

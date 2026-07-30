@@ -25,7 +25,7 @@ export function isRequiredModule(moduleId: string): boolean {
 export interface ModuleInstallationRecord {
   moduleId: string;
   version: SemVer;
-  status: "installed" | "failed";
+  status: "installed" | "failed" | "uninstalled";
   enabled: boolean;
   grantedPermissions: Permission[];
   settings: Record<string, unknown>;
@@ -82,6 +82,9 @@ function recordFor(
   preinstalledIds: readonly string[],
 ): { record: ModuleInstallationRecord | null; persisted: boolean } {
   const persisted = records.find((r) => r.moduleId === manifest.id) ?? null;
+  // En "uninstalled"-rad är en gravsten: den stänger av den implicita
+  // medföljande installationen utan att röra användarens data.
+  if (persisted?.status === "uninstalled") return { record: null, persisted: true };
   if (persisted) return { record: persisted, persisted: true };
   return { record: implicitRecord(manifest, preinstalledIds), persisted: false };
 }
@@ -233,7 +236,7 @@ export function canInstall(
   grantedPermissions: Permission[],
   hostApiVersion: SemVer = LIFEAPP_API_VERSION,
 ): LifecycleCheck {
-  if (records.some((r) => r.moduleId === manifest.id))
+  if (records.some((r) => r.moduleId === manifest.id && r.status !== "uninstalled"))
     return nope("already_installed", `${manifest.name} är redan installerad.`);
   if (!isApiCompatible(manifest, hostApiVersion))
     return nope("incompatible_api", `${manifest.name} kräver en nyare LifeApp.`);
