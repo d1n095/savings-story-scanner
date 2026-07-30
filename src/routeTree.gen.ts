@@ -17,6 +17,7 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth_.forgot-pa
 import { Route as AuthConfirmedRouteImport } from './routes/auth_.confirmed'
 import { Route as AuthCheckEmailRouteImport } from './routes/auth_.check-email'
 import { Route as AuthCallbackRouteImport } from './routes/auth_.callback'
+import { Route as AppTillaggRouteImport } from './routes/_app/tillagg'
 import { Route as AppPlaneringRouteImport } from './routes/_app/planering'
 import { Route as AppPengarRouteImport } from './routes/_app/pengar'
 import { Route as AppMainAiRouteImport } from './routes/_app/main-ai'
@@ -69,6 +70,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth_/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppTillaggRoute = AppTillaggRouteImport.update({
+  id: '/tillagg',
+  path: '/tillagg',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppPlaneringRoute = AppPlaneringRouteImport.update({
   id: '/planering',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/main-ai': typeof AppMainAiRoute
   '/pengar': typeof AppPengarRoute
   '/planering': typeof AppPlaneringRoute
+  '/tillagg': typeof AppTillaggRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/check-email': typeof AuthCheckEmailRoute
   '/auth/confirmed': typeof AuthConfirmedRoute
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/main-ai': typeof AppMainAiRoute
   '/pengar': typeof AppPengarRoute
   '/planering': typeof AppPlaneringRoute
+  '/tillagg': typeof AppTillaggRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/check-email': typeof AuthCheckEmailRoute
   '/auth/confirmed': typeof AuthConfirmedRoute
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/_app/main-ai': typeof AppMainAiRoute
   '/_app/pengar': typeof AppPengarRoute
   '/_app/planering': typeof AppPlaneringRoute
+  '/_app/tillagg': typeof AppTillaggRoute
   '/auth_/callback': typeof AuthCallbackRoute
   '/auth_/check-email': typeof AuthCheckEmailRoute
   '/auth_/confirmed': typeof AuthConfirmedRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/main-ai'
     | '/pengar'
     | '/planering'
+    | '/tillagg'
     | '/auth/callback'
     | '/auth/check-email'
     | '/auth/confirmed'
@@ -241,6 +251,7 @@ export interface FileRouteTypes {
     | '/main-ai'
     | '/pengar'
     | '/planering'
+    | '/tillagg'
     | '/auth/callback'
     | '/auth/check-email'
     | '/auth/confirmed'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/_app/main-ai'
     | '/_app/pengar'
     | '/_app/planering'
+    | '/_app/tillagg'
     | '/auth_/callback'
     | '/auth_/check-email'
     | '/auth_/confirmed'
@@ -342,6 +354,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/tillagg': {
+      id: '/_app/tillagg'
+      path: '/tillagg'
+      fullPath: '/tillagg'
+      preLoaderRoute: typeof AppTillaggRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/planering': {
       id: '/_app/planering'
@@ -463,6 +482,7 @@ interface AppRouteChildren {
   AppMainAiRoute: typeof AppMainAiRoute
   AppPengarRoute: typeof AppPengarRoute
   AppPlaneringRoute: typeof AppPlaneringRoute
+  AppTillaggRoute: typeof AppTillaggRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -476,6 +496,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMainAiRoute: AppMainAiRoute,
   AppPengarRoute: AppPengarRoute,
   AppPlaneringRoute: AppPlaneringRoute,
+  AppTillaggRoute: AppTillaggRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
