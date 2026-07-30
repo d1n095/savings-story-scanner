@@ -174,8 +174,18 @@ describe("livscykel", () => {
     expect(planning && planning.state).toBe("available");
   });
 
+  it("avinstallerad medföljande modul kan installeras om", async () => {
+    expect((await uninstallModule("planning")).ok).toBe(true);
+    const again = await installModule("planning");
+    expect(again.ok).toBe(true);
+    const views = await listModuleViews();
+    expect(views.ok && views.value.find((v) => v.manifest.id === "planning")?.state).toBe(
+      "enabled",
+    );
+  });
+
   it("misslyckad persistens ger fel och rapporterar aldrig lyckat", async () => {
-    state.failNext = "insert";
+    state.failNext = "upsert";
     const r = await installModule("health");
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.code).toBe("persistence_failed");

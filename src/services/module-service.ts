@@ -164,16 +164,21 @@ export async function installModule(
     return fail(check.code ?? "persistence_failed", check.message ?? "Installationen nekades.");
   }
 
+  // Upsert: en avinstallerad modul lämnar kvar en tombstone-rad som annars
+  // gör ominstallation omöjlig (unik nyckel user_id+module_id).
   const { data, error } = await supabase
     .from("module_installations")
-    .insert({
-      user_id: userId,
-      module_id: moduleId,
-      version: manifest.version,
-      status: "installed",
-      enabled: true,
-      granted_permissions: granted,
-    })
+    .upsert(
+      {
+        user_id: userId,
+        module_id: moduleId,
+        version: manifest.version,
+        status: "installed",
+        enabled: true,
+        granted_permissions: granted,
+      },
+      { onConflict: "user_id,module_id" },
+    )
     .select(
       "module_id, version, status, enabled, granted_permissions, settings, failure_reason, installed_at, updated_at",
     )
@@ -309,7 +314,13 @@ export async function uninstallModule(moduleId: string): Promise<ServiceResult<s
           { onConflict: "user_id,module_id" },
         )
       ).error
-    : (await supabase.from("module_installations").delete().eq("module_id", moduleId)).error;
+    : (
+        await supabase
+          .from("module_installations")
+          .delete()
+          .eq("module_id", moduleId)
+          .eq("user_id", userId)
+      ).error;
 
   if (error) {
     await audit(userId, moduleId, "uninstall", false, error.message);
