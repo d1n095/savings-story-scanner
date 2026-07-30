@@ -474,7 +474,8 @@ export async function cancelSession(sessionId: string): Promise<TrainingResult<n
     .eq("status", "planned")
     .select("id, title, scheduled_on");
   if (error) return dbFail("Passet kunde inte avbokas.", error.message);
-  if (!data || data.length === 0) return fail("not_found", "Det finns inget planerat pass att avboka.");
+  if (!data || data.length === 0)
+    return fail("not_found", "Det finns inget planerat pass att avboka.");
   publishTrainingEvent("training.session.cancelled", user.value, {
     sessionId,
     title: data[0].title,

@@ -149,7 +149,8 @@ export function TrainingOverview() {
             {todayPlanned.length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">
                 Inget pass planerat idag.
-                {upcoming.length > 0 && ` Nästa: ${upcoming[0].title} den ${upcoming[0].scheduledOn}.`}
+                {upcoming.length > 0 &&
+                  ` Nästa: ${upcoming[0].title} den ${upcoming[0].scheduledOn}.`}
               </p>
             ) : (
               <ul className="mt-2 space-y-2">

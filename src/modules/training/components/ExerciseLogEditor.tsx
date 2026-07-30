@@ -211,7 +211,9 @@ export function ExerciseLogEditor({ value, onChange, disabled }: Props) {
                           aria-label={`Vikt set ${setIndex + 1}`}
                           value={s.weightKg}
                           disabled={disabled}
-                          onChange={(e) => patchSet(exIndex, setIndex, { weightKg: e.target.value })}
+                          onChange={(e) =>
+                            patchSet(exIndex, setIndex, { weightKg: e.target.value })
+                          }
                         />
                       </div>
                     </>
@@ -234,7 +236,9 @@ export function ExerciseLogEditor({ value, onChange, disabled }: Props) {
                         aria-label={`Distans set ${setIndex + 1}`}
                         value={s.distanceKm}
                         disabled={disabled}
-                        onChange={(e) => patchSet(exIndex, setIndex, { distanceKm: e.target.value })}
+                        onChange={(e) =>
+                          patchSet(exIndex, setIndex, { distanceKm: e.target.value })
+                        }
                       />
                     </div>
                   )}

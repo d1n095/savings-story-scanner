@@ -88,8 +88,24 @@ describe("beräkningar", () => {
     const exercises = [
       ex({
         sets: [
-          { id: "1", sessionExerciseId: "ex-1", setIndex: 0, reps: 10, weightKg: 50, durationMin: null, distanceKm: null },
-          { id: "2", sessionExerciseId: "ex-1", setIndex: 1, reps: 8, weightKg: 60, durationMin: null, distanceKm: null },
+          {
+            id: "1",
+            sessionExerciseId: "ex-1",
+            setIndex: 0,
+            reps: 10,
+            weightKg: 50,
+            durationMin: null,
+            distanceKm: null,
+          },
+          {
+            id: "2",
+            sessionExerciseId: "ex-1",
+            setIndex: 1,
+            reps: 8,
+            weightKg: 60,
+            durationMin: null,
+            distanceKm: null,
+          },
         ],
       }),
     ];
@@ -102,7 +118,15 @@ describe("beräkningar", () => {
       ex({
         exerciseType: "cardio",
         sets: [
-          { id: "1", sessionExerciseId: "ex-1", setIndex: 0, reps: null, weightKg: null, durationMin: 30, distanceKm: 5.5 },
+          {
+            id: "1",
+            sessionExerciseId: "ex-1",
+            setIndex: 0,
+            reps: null,
+            weightKg: null,
+            durationMin: 30,
+            distanceKm: 5.5,
+          },
         ],
       }),
     ];
@@ -149,6 +173,5 @@ describe("händelser", () => {
     expect(trainingModule.eventsPublished).toContain(envelope.name);
     expect(envelope.payload.sessionId).toBe("s-1");
     expect(envelope.moduleId).toBe(TRAINING_MODULE_ID);
-
   });
 });

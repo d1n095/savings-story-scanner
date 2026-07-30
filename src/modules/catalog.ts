@@ -17,5 +17,4 @@ export const preinstalledModules: LifeModuleManifest[] = [
   trainingModule,
 ];
 
-
 export const lifeStoreCatalog: LifeModuleManifest[] = [...preinstalledModules, ...upcomingModules];

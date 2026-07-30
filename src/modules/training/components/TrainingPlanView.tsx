@@ -125,7 +125,10 @@ function AddExerciseForm({ template }: { template: WorkoutTemplate }) {
 function NewTemplateForm() {
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
-  const create = useTrainingMutation(async () => createTemplate({ name, notes }), "Mallen är skapad.");
+  const create = useTrainingMutation(
+    async () => createTemplate({ name, notes }),
+    "Mallen är skapad.",
+  );
 
   return (
     <section className="rounded-2xl border border-border p-4">
@@ -177,10 +180,7 @@ export function TrainingPlanView() {
     async (id: string) => deleteTemplateExercise(id),
     "Övningen är borttagen.",
   );
-  const cancel = useTrainingMutation(
-    async (id: string) => cancelSession(id),
-    "Passet är avbokat.",
-  );
+  const cancel = useTrainingMutation(async (id: string) => cancelSession(id), "Passet är avbokat.");
 
   if (templates.isLoading || sessions.isLoading)
     return (
