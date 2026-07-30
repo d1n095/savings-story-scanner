@@ -10,6 +10,7 @@ import { lifeStoreCatalog } from "@/modules/catalog";
 import {
   isoDate,
   plannedForDate,
+  plannedFromDate,
   recentCompleted,
   sessionDistanceKm,
   sessionSetCount,
@@ -157,6 +158,17 @@ describe("beräkningar", () => {
     expect(upcomingPlanned(list, "2026-07-31").map((s) => s.id)).toEqual(["b"]);
     expect(recentCompleted(list).map((s) => s.id)).toEqual(["c"]);
   });
+
+  it("tar med pass som planerats för idag i planeringsvyn", () => {
+    const list = [
+      session({ id: "a", status: "planned", scheduledOn: "2026-07-30" }),
+      session({ id: "b", status: "planned", scheduledOn: "2026-08-02" }),
+      session({ id: "c", status: "cancelled", scheduledOn: "2026-08-03" }),
+    ];
+    expect(plannedFromDate(list, "2026-07-30").map((s) => s.id)).toEqual(["a", "b"]);
+    expect(plannedFromDate(list, "2026-08-01").map((s) => s.id)).toEqual(["b"]);
+  });
+
 
   it("formaterar datum som ISO-dag", () => {
     expect(isoDate(new Date("2026-07-30T22:15:00Z"))).toMatch(/^\d{4}-\d{2}-\d{2}$/);

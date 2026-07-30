@@ -24,7 +24,7 @@ import {
   deleteTemplateExercise,
 } from "../service";
 import { useTrainingMutation, useTrainingSessions, useTrainingTemplates } from "../hooks";
-import { isoDate, upcomingPlanned } from "../summary";
+import { isoDate, plannedFromDate } from "../summary";
 import {
   EXERCISE_TYPES,
   EXERCISE_TYPE_LABEL,
@@ -32,8 +32,10 @@ import {
   type SessionDetail,
   type WorkoutTemplate,
 } from "../types";
+import { ConfirmDelete } from "./ConfirmDelete";
 import { LogSessionDialog } from "./LogSessionDialog";
 import { ScheduleSessionDialog } from "./ScheduleSessionDialog";
+
 
 function num(value: string): number | null {
   const t = value.trim().replace(",", ".");
@@ -210,7 +212,7 @@ export function TrainingPlanView() {
     );
 
   const list = templates.data ?? [];
-  const planned = upcomingPlanned(sessions.data ?? [], isoDate(new Date()));
+  const planned = plannedFromDate(sessions.data ?? [], isoDate(new Date()));
 
   return (
     <div className="space-y-6">
@@ -262,15 +264,23 @@ export function TrainingPlanView() {
                   >
                     <Plus className="mr-1 h-3.5 w-3.5" /> Planera
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    aria-label={`Ta bort mallen ${t.name}`}
-                    disabled={removeTemplate.isPending}
-                    onClick={() => removeTemplate.mutate(t.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <ConfirmDelete
+                    title="Ta bort mallen?"
+                    description={`"${t.name}" och mallens övningar tas bort. Redan loggade pass påverkas inte.`}
+                    pending={removeTemplate.isPending}
+                    onConfirm={() => removeTemplate.mutate(t.id)}
+                    trigger={
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        aria-label={`Ta bort mallen ${t.name}`}
+                        disabled={removeTemplate.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+
                 </div>
               </div>
 
@@ -292,15 +302,23 @@ export function TrainingPlanView() {
                             {ex.plannedWeightKg ? ` · ${ex.plannedWeightKg} kg` : ""}
                           </div>
                         </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          aria-label={`Ta bort övningen ${ex.name}`}
-                          disabled={removeExercise.isPending}
-                          onClick={() => removeExercise.mutate(ex.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <ConfirmDelete
+                          title="Ta bort övningen?"
+                          description={`"${ex.name}" tas bort från mallen.`}
+                          pending={removeExercise.isPending}
+                          onConfirm={() => removeExercise.mutate(ex.id)}
+                          trigger={
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              aria-label={`Ta bort övningen ${ex.name}`}
+                              disabled={removeExercise.isPending}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          }
+                        />
+
                       </li>
                     ))}
                 </ul>
