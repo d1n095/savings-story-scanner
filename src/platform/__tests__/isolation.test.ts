@@ -31,13 +31,21 @@ describe("Isolering av plattformslagret", () => {
       join("services", "module-service.ts"),
       join("services", "__tests__", "module-service.test.ts"),
       join("modules", "catalog.ts"),
+      // Skalets kompositionspunkt och hook för kalenderleverantörer.
+      join("modules", "calendar-providers.ts"),
+      join("hooks", "use-calendar-contributions.ts"),
+      // Kalendermodulen konsumerar plattformens leverantörskontrakt.
+      join("modules", "calendar", "source.ts"),
     ];
     const allowedPattern = [
       /modules[\\/][a-z-]+[\\/]module\.ts$/,
-      // Modulens egna kontraktsadapter mot plattformens kuvert (events/kommandon).
+      // Modulens egna kontraktsadapter mot plattformens kuvert (events/kommandon)
+      // och kalenderleverantörskontraktet.
       /modules[\\/][a-z-]+[\\/]events\.ts$/,
+      /modules[\\/][a-z-]+[\\/]calendar\.ts$/,
       /modules[\\/][a-z-]+[\\/]__tests__[\\/]/,
     ];
+
 
     const offenders = otherFiles
       .filter((f) => !allowed.some((a) => f.endsWith(a)))
