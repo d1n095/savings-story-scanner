@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar, Wallet, Sun, MoreHorizontal, Settings, LogOut, Menu, X,
-  CalendarRange, Briefcase, LayoutDashboard, Sparkles, Brain,
+  CalendarRange, Briefcase, LayoutDashboard, Sparkles, Brain, Blocks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ActionFab } from "@/components/action-sheet/ActionSheet";
@@ -31,6 +31,7 @@ const SECONDARY = [
   { to: "/planering", label: "Planering",   icon: CalendarRange },
   { to: "/jobb",      label: "Jobb & lön",  icon: Briefcase },
   { to: "/dashboard", label: "Översikt",    icon: LayoutDashboard },
+  { to: "/tillagg",   label: "Tillägg",     icon: Blocks },
 ] as const;
 
 function AppLayout() {
