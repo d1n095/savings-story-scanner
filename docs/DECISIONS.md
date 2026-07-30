@@ -63,3 +63,13 @@ kärnmanifest (`corePreinstalledModules`) plus `upcomingModules`. Route-filer un
 `src/routes/_app/` är tunna adaptrar utan affärslogik.
 **Se:** [MODULE_STANDARD.md](MODULE_STANDARD.md), `src/modules/planning/README.md`
 
+
+## ADR-015 — Kalendern läser moduldata via leverantörskontrakt
+**Datum:** 2026-07-30 · **Status:** Accepted
+Kalendern frågar aldrig en modults tabeller. Plattformen definierar
+`CalendarProvider`/`CalendarContribution` (`src/platform/calendar-provider.ts`).
+Varje modul äger sin egen adapter (`src/modules/<modul>/calendar.ts`) och skalet
+registrerar leverantörerna i `src/modules/calendar-providers.ts`. Registret filtrerar
+på aktiverade moduler, så bidrag försvinner när modulen inaktiveras eller avinstalleras.
+**Konsekvens:** Nya moduler syns i kalendern utan att kalendermodulen ändras.
+**Se:** `src/modules/training/calendar.ts`, `src/hooks/use-calendar-contributions.ts`

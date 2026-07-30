@@ -9,3 +9,5 @@ export * from "./module-runtime";
 export * from "./module-catalog";
 export * from "./module-state";
 export { lifeAppManifest } from "./manifest";
+
+export * from "./calendar-provider";

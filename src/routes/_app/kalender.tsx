@@ -1,15 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { buildDayIndex, isoDateLocal, KIND_META, type DaySummary, type EventKind, type DayEvent } from "@/modules/calendar/source";
 import { calculateShift, DEFAULT_OB_RULES, type OBRule } from "@/modules/salary/ob";
+import { useCalendarContributions } from "@/hooks/use-calendar-contributions";
 import { sek, num } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   ChevronLeft, ChevronRight, Plus, Briefcase, Wallet, TrendingUp,
-  Bell, Plane, StickyNote, X, Sparkles, Trash2,
+  Bell, Plane, StickyNote, X, Sparkles, Trash2, ArrowUpRight,
 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -94,11 +95,18 @@ function KalenderPage() {
     },
   });
 
+  // Modulbidrag (t.ex. Träning) via kalenderkontraktet — inte direkta tabellläsningar.
+  const contributions = useCalendarContributions({
+    startDate: isoDateLocal(gridStart),
+    endDate: isoDateLocal(gridEnd),
+  });
+
   const dayIndex = useMemo(() => buildDayIndex(gridStart, gridEnd, {
     shifts: shifts.data as any, expenses: expenses.data as any,
     reminders: reminders.data as any, absences: absences.data as any,
     timeline: timeline.data as any,
-  }), [gridStart, gridEnd, shifts.data, expenses.data, reminders.data, absences.data, timeline.data]);
+    contributions: contributions.data ?? [],
+  }), [gridStart, gridEnd, shifts.data, expenses.data, reminders.data, absences.data, timeline.data, contributions.data]);
 
   // Auto-scroll till idag första gången
   useEffect(() => {
@@ -120,6 +128,7 @@ function KalenderPage() {
     qc.invalidateQueries({ queryKey: ["cal-absences"] });
     qc.invalidateQueries({ queryKey: ["cal-timeline"] });
     qc.invalidateQueries({ queryKey: ["shifts"] });
+    qc.invalidateQueries({ queryKey: ["calendar", "module-contributions"] });
   };
 
   return (
@@ -148,7 +157,7 @@ function KalenderPage() {
 
       {/* Legend */}
       <div className="glass flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl px-4 py-2 text-[11px] text-muted-foreground">
-        {(["shift","income","expense","reminder","absence","holiday","nameday"] as EventKind[]).map(k => (
+        {(["shift","income","expense","reminder","absence","holiday","nameday","module"] as EventKind[]).map(k => (
           <span key={k} className="inline-flex items-center gap-1.5">
             <span className={cn("h-2 w-2 rounded-full", KIND_META[k].dot)} /> {KIND_META[k].label}
           </span>
@@ -259,6 +268,8 @@ function DayPanel({ day, date, onClose, onQuick, onRefresh }: {
   }
 
   async function removeEvent(ev: DayEvent) {
+    // Kalendern äger inte modulernas data och får aldrig radera den.
+    if (ev.kind === "module") return;
     if (!ev.refTable || !ev.refId) return;
     if (!confirm(`Ta bort "${ev.title}"?`)) return;
     const { error } = await supabase.from(ev.refTable as any).delete().eq("id", ev.refId);
@@ -323,8 +334,8 @@ function DayPanel({ day, date, onClose, onQuick, onRefresh }: {
         {Object.entries(groups).map(([kind, list]) => (
           <div key={kind}>
             <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-              <span className={cn("h-2 w-2 rounded-full", KIND_META[kind as EventKind]?.dot)} />
-              {KIND_META[kind as EventKind]?.label}
+              <span className={cn("h-2 w-2 rounded-full", list[0]?.dot ?? KIND_META[kind as EventKind]?.dot)} />
+              {(kind === "module" ? list[0]?.groupLabel : undefined) ?? KIND_META[kind as EventKind]?.label}
             </div>
             <ul className="space-y-1.5">
               {list.map((ev) => (
@@ -339,7 +350,16 @@ function DayPanel({ day, date, onClose, onQuick, onRefresh }: {
                         {ev.amount < 0 ? "−" : ""}{sek(Math.abs(ev.amount))}
                       </span>
                     )}
-                    {ev.refTable && (
+                    {ev.deepLink && (
+                      <Link
+                        to={ev.deepLink}
+                        onClick={onClose}
+                        className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-1 text-[10px] text-muted-foreground transition hover:border-[oklch(0.85_0.12_85/0.4)] hover:text-foreground"
+                      >
+                        Öppna <ArrowUpRight className="h-3 w-3" />
+                      </Link>
+                    )}
+                    {ev.refTable && ev.kind !== "module" && (
                       <button onClick={() => removeEvent(ev)} className="opacity-0 transition group-hover:opacity-100">
                         <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-[oklch(0.7_0.14_28)]" />
                       </button>
@@ -350,6 +370,7 @@ function DayPanel({ day, date, onClose, onQuick, onRefresh }: {
             </ul>
           </div>
         ))}
+
       </div>
 
       {/* Insight (deterministic) */}

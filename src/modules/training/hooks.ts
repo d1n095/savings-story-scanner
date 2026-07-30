@@ -46,6 +46,8 @@ export function useTrainingMutation<TArgs, TValue>(
     onSuccess: () => {
       toast.success(successText);
       void qc.invalidateQueries({ queryKey: ["training"] });
+      // Kalendern läser träningspass via kalenderkontraktet — uppdatera den också.
+      void qc.invalidateQueries({ queryKey: ["calendar", "module-contributions"] });
     },
     onError: (error) => {
       toast.error("Det gick inte", { description: error.message });
