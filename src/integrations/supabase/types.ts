@@ -789,6 +789,236 @@ export type Database = {
         }
         Relationships: []
       }
+      training_session_exercises: {
+        Row: {
+          created_at: string
+          exercise_type: Database["public"]["Enums"]["training_exercise_type"]
+          id: string
+          name: string
+          session_id: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_type?: Database["public"]["Enums"]["training_exercise_type"]
+          id?: string
+          name: string
+          session_id: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_type?: Database["public"]["Enums"]["training_exercise_type"]
+          id?: string
+          name?: string
+          session_id?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_session_exercises_session_fk"
+            columns: ["session_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "training_sessions"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      training_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_min: number | null
+          id: string
+          notes: string | null
+          perceived_effort: number | null
+          scheduled_on: string
+          scheduled_time: string | null
+          status: Database["public"]["Enums"]["training_session_status"]
+          template_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_min?: number | null
+          id?: string
+          notes?: string | null
+          perceived_effort?: number | null
+          scheduled_on: string
+          scheduled_time?: string | null
+          status?: Database["public"]["Enums"]["training_session_status"]
+          template_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_min?: number | null
+          id?: string
+          notes?: string | null
+          perceived_effort?: number | null
+          scheduled_on?: string
+          scheduled_time?: string | null
+          status?: Database["public"]["Enums"]["training_session_status"]
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_sessions_template_fk"
+            columns: ["template_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "training_templates"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      training_sets: {
+        Row: {
+          created_at: string
+          distance_km: number | null
+          duration_min: number | null
+          id: string
+          reps: number | null
+          session_exercise_id: string
+          set_index: number
+          updated_at: string
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          created_at?: string
+          distance_km?: number | null
+          duration_min?: number | null
+          id?: string
+          reps?: number | null
+          session_exercise_id: string
+          set_index?: number
+          updated_at?: string
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          created_at?: string
+          distance_km?: number | null
+          duration_min?: number | null
+          id?: string
+          reps?: number | null
+          session_exercise_id?: string
+          set_index?: number
+          updated_at?: string
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_sets_exercise_fk"
+            columns: ["session_exercise_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "training_session_exercises"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      training_template_exercises: {
+        Row: {
+          created_at: string
+          exercise_type: Database["public"]["Enums"]["training_exercise_type"]
+          id: string
+          name: string
+          planned_distance_km: number | null
+          planned_duration_min: number | null
+          planned_reps: number | null
+          planned_sets: number | null
+          planned_weight_kg: number | null
+          sort_order: number
+          template_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exercise_type?: Database["public"]["Enums"]["training_exercise_type"]
+          id?: string
+          name: string
+          planned_distance_km?: number | null
+          planned_duration_min?: number | null
+          planned_reps?: number | null
+          planned_sets?: number | null
+          planned_weight_kg?: number | null
+          sort_order?: number
+          template_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exercise_type?: Database["public"]["Enums"]["training_exercise_type"]
+          id?: string
+          name?: string
+          planned_distance_km?: number | null
+          planned_duration_min?: number | null
+          planned_reps?: number | null
+          planned_sets?: number | null
+          planned_weight_kg?: number | null
+          sort_order?: number
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_template_exercises_template_fk"
+            columns: ["template_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "training_templates"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      training_templates: {
+        Row: {
+          archived: boolean
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_defaults: {
         Row: {
           confidence: number
@@ -1055,6 +1285,8 @@ export type Database = {
         | "health"
         | "travel"
         | "document"
+      training_exercise_type: "strength" | "cardio" | "mobility" | "other"
+      training_session_status: "planned" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1218,6 +1450,8 @@ export const Constants = {
         "travel",
         "document",
       ],
+      training_exercise_type: ["strength", "cardio", "mobility", "other"],
+      training_session_status: ["planned", "completed", "cancelled"],
     },
   },
 } as const
