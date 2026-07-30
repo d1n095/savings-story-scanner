@@ -326,6 +326,78 @@ export type Database = {
           },
         ]
       }
+      module_audit_events: {
+        Row: {
+          action: string
+          created_at: string
+          detail: string | null
+          id: string
+          module_id: string
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          module_id: string
+          success?: boolean
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          module_id?: string
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      module_installations: {
+        Row: {
+          enabled: boolean
+          failure_reason: string | null
+          granted_permissions: string[]
+          id: string
+          installed_at: string
+          module_id: string
+          settings: Json
+          status: string
+          updated_at: string
+          user_id: string
+          version: string
+        }
+        Insert: {
+          enabled?: boolean
+          failure_reason?: string | null
+          granted_permissions?: string[]
+          id?: string
+          installed_at?: string
+          module_id: string
+          settings?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+          version: string
+        }
+        Update: {
+          enabled?: boolean
+          failure_reason?: string | null
+          granted_permissions?: string[]
+          id?: string
+          installed_at?: string
+          module_id?: string
+          settings?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
